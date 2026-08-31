@@ -1,4 +1,4 @@
-Historia de usuario 4 - Consultar disponibilidad del recurso (PRIORIDAD: P3) 
+Historia de usuario 0 - Consultar disponibilidad del recurso (PRIORIDAD: P3) 
 
 [El monitor de Activos/Espacios y/o el modulo 2 desea consultar la disponibilidad y el horario asignado de alguno de los recursos ya almacenados en el sistema, ya sea un activo o espacio, para conocer su disponibilidad actual y para una hora o fecha en específico de forma rápida y eficiente.]
 
