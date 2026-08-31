@@ -8,7 +8,7 @@ Por qué esta prioridad?
 Test independiente
 [La historia de usaurio se puede testear mediente la creacion de un activo y su correcta aparicion en la base de datos con los atributos asignados]
 
-Acceptance Scenaries
+Escenarios de aceptación
 #1 Creacion activo exitosa
 [Given - Dado que soy un usuario de Direccion Universitaria 
  When - Cuando ingreso nomnbre, placa de inventario, tipo computador, ubicacion laboratorio simulacion, estado fisico nuevo de un recurso nuevo y lo envio
