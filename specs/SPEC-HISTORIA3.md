@@ -1,6 +1,6 @@
-# Historia de Usuario 2 - Actualizar el estado del recurso (Prioridad: P1)
+# Historia de Usuario 3 - Actualizar el estado del recurso (Prioridad: P1)
 
-La Dirección Universitaria, Monitor de recursos, Módulo 2 o Módulo 3 necesitan poder actualizar el estado de un recurso a lo largo de su ciclo de vida,Para mantener un registro preciso de su disponibilidad y condición, facilitando su categorización y evitando conflictos de horarios o entregas tardías.
+La Dirección Universitaria, Monitor de recursos, Módulo 2 o Módulo 3 necesitan poder actualizar el estado de un recurso a lo largo de su ciclo de vida, Para mantener un registro preciso de su disponibilidad y condición, facilitando su categorización y evitando conflictos de horarios o entregas tardías.
 
 **¿Por qué esta prioridad?:** Esta función es vital porque el estado de un recurso es el indicador principal de su disponibilidad y usabilidad. Sin esta funcionalidad, el sistema no podría prevenir la doble reserva de recursos ni notificar sobre su mal estado, lo que impacta directamente la operación diaria.
 
