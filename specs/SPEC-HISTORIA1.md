@@ -106,6 +106,8 @@ El sistema debe ejecutar una reversión atómica (rollback) garantizando que no 
 
 - **[Entity 5]**: [facultad] [ID, nombre, descripción]
 
+- **Entidades representadas en el diagrama ENTIDAD-RELACION ubicado en /Gestion-de-activos---Modulo=1/documentation/resources/Diagrama E-R.png**
+
 ## Success Criteria
 
 ### Measurable Outcomes
