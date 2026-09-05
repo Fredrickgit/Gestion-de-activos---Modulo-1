@@ -1,32 +1,36 @@
-# Historia de Usuario 3 - Actualizar el estado del recurso (Prioridad: P1)
+# Feature Specification: [Actualizar el estado del recurso]
+**Created** : [30/08/2026]
+
+## User Story 3 - [Actualizar el estado del recurso] (Prioridad: P1)
+
 
 [La Dirección Universitaria, Monitor de recursos, Módulo 2 o Módulo 3 necesitan poder actualizar el estado de un recurso a lo largo de su ciclo de vida, Para mantener un registro preciso de su disponibilidad y condición, facilitando su categorización y evitando conflictos de horarios o entregas tardías.]
 
-**¿Por qué esta prioridad?:** [Esta función es vital porque el estado de un recurso es el indicador principal de su disponibilidad y usabilidad. Sin esta funcionalidad, el sistema no podría prevenir la doble reserva de recursos ni notificar sobre su mal estado, lo que impacta directamente la operación diaria.]
+**¿Por qué esta prioridad?:**; [Esta función es vital porque el estado de un recurso es el indicador principal de su disponibilidad y usabilidad. Sin esta funcionalidad, el sistema no podría prevenir la doble reserva de recursos ni notificar sobre su mal estado, lo que impacta directamente la operación diaria.]
 
-**Test indepentientes:** [Esta historia puede ser probada de forma independiente al realizar la actualización del estado de un recurso a través de la interfaz y verificando que el cambio se refleje correctamente en la base de datos y que se haya generado un registro de auditoría con el usuario, la hora y el estado anterior.]
+**Test indepentientes:**; [Esta historia puede ser probada de forma independiente al realizar la actualización del estado de un recurso a través de la interfaz y verificando que el cambio se refleje correctamente en la base de datos y que se haya generado un registro de auditoría con el usuario, la hora y el estado anterior.]
 
 **Escenarios de aceptación**
 
-1. **Escenario:** [Actualización exitosa del estado de un recurso]
-    - **Dado:** [Soy un usuario autorizado (Dirección Universitaria, Monitor de recursos, Módulo 2 o Módulo 3) y estoy autenticado en el sistema, y que existe un recurso con un estado actual (ej. "Disponible").]
-    - **Cuando:** [Selecciono el recurso, elijo un nuevo estado (ej. "En mantenimiento") y confirmo la actualización.]
-    - **Entonces:** [El sistema cambia el estado del recurso al nuevo estado seleccionado y muestra un mensaje de confirmación.]
+1. **Scenario:** [Actualización exitosa del estado de un recurso]
+    - **Given:** [Soy un usuario autorizado (Dirección Universitaria, Monitor de recursos, Módulo 2 o Módulo 3) y estoy autenticado en el sistema, y que existe un recurso con un estado actual (ej. "Disponible").]
+    - **When:** [Selecciono el recurso, elijo un nuevo estado (ej. "En mantenimiento") y confirmo la actualización.]
+    - **Then:** [El sistema cambia el estado del recurso al nuevo estado seleccionado y muestra un mensaje de confirmación.]
 
-2. **Escenario:** [Registro de auditoría de la actualización]
-    - **Dado:** [Soy un usuario autorizado y estoy autenticado, y que un recurso tiene un estado previo (ej. "Disponible").]
-    - **Cuando:** [Actualizo el estado del recurso a un nuevo estado (ej. "Prestado").]
-    - **Entonces:**[El sistema registra en el historial del recurso el usuario que realizó el cambio, la fecha y hora exacta de la modificación, y el estado anterior del recurso.]
+2. **Scenario:** [Registro de auditoría de la actualización]
+    - **Given:** [Soy un usuario autorizado y estoy autenticado, y que un recurso tiene un estado previo (ej. "Disponible").]
+    - **When:** [Actualizo el estado del recurso a un nuevo estado (ej. "Prestado").]
+    - **Then:**[El sistema registra en el historial del recurso el usuario que realizó el cambio, la fecha y hora exacta de la modificación, y el estado anterior del recurso.]
 
-3. **Escenario:** [Validación de permisos para actualizar el estado]
-    - **Dado:** [Soy un usuario no autorizado (ej. un usuario de Consulta o sin roles asignados) y estoy autenticado en el sistema.]
-    - **Cuando:** [Intento acceder a la opción de actualizar el estado de un recurso.]
-    - **Entonces:** [El sistema deniega la acción y muestra un mensaje de error indicando que no tengo permisos suficientes para realizar esta operación.]
+3. **Scenario:** [Validación de permisos para actualizar el estado]
+    - **Given:** [Soy un usuario no autorizado (ej. un usuario de Consulta o sin roles asignados) y estoy autenticado en el sistema.]
+    - **When:** [Intento acceder a la opción de actualizar el estado de un recurso.]
+    - **Then:** [El sistema deniega la acción y muestra un mensaje de error indicando que no tengo permisos suficientes para realizar esta operación.]
 
-4. **Escenario:** [Intento de actualización a un estado inválido]
-    - **Dado:** [Soy un usuario autorizado y estoy en la pantalla de actualización de estado de un recurso.]
-    - **Cuando:** [Intento seleccionar o asignar un estado que no está dentro del flujo de vida válido (ej. intentar pasar un recurso de "En mantenimiento" directamente a "Disponible" cuando se requiere una revisión intermedia).]
-    - **Entonces:** [El sistema muestra un mensaje de error indicando que la transición de estado no es permitida y no realiza el cambio.]
+4. **Scenario:** [Intento de actualización a un estado inválido]
+    - **Given:** [Soy un usuario autorizado y estoy en la pantalla de actualización de estado de un recurso.]
+    - **When:** [Intento seleccionar o asignar un estado que no está dentro del flujo de vida válido (ej. intentar pasar un recurso de "En mantenimiento" directamente a "Disponible" cuando se requiere una revisión intermedia).]
+    - **Then:** [El sistema muestra un mensaje de error indicando que la transición de estado no es permitida y no realiza el cambio.]
 
 
 ### Edge Cases
@@ -51,15 +55,15 @@ El sistema realiza una reboninación completa. No se guardará ni el cambio de e
 
 ### Functional Requirements
 
-- **FR-001:** El sistema DEBE permitir a los roles autorizados (Dirección Universitaria, Monitor de recursos, Módulo 2, Módulo 3) actualizar el estado de un recurso.  
+- **FR-001**: El sistema DEBE permitir a los roles autorizados (Dirección Universitaria, Monitor de recursos, Módulo 2, Módulo 3) actualizar el estado de un recurso.  
 
-- **FR-002:** El sistema DEBE restringir la actualización de estados a usuarios sin permisos explícitos (ej. perfil Consulta/Lectura).  
+- **FR-002**: El sistema DEBE restringir la actualización de estados a usuarios sin permisos explícitos (ej. perfil Consulta/Lectura).  
 
-- **FR-003:** El sistema DEBE hacer cumplir las reglas de transición del ciclo de vida del recurso según la máquina de estados definida.  
+- **FR-003**: El sistema DEBE hacer cumplir las reglas de transición del ciclo de vida del recurso según la máquina de estados definida.  
 
-- **FR-004:** El sistema DEBE generar un registro de auditoría por cada cambio de estado, almacenando ID de usuario, marca de tiempo, estado anterior y nuevo estado.  
+- **FR-004**: El sistema DEBE generar un registro de auditoría por cada cambio de estado, almacenando ID de usuario, marca de tiempo, estado anterior y nuevo estado.  
 
-- **FR-005:** El sistema DEBE mostrar mensajes de retroalimentación claros al usuario tras el éxito o fallo de la actualización
+- **FR-005**: El sistema DEBE mostrar mensajes de retroalimentación claros al usuario tras el éxito o fallo de la actualización
 
 ### Key Entities 
 
@@ -71,10 +75,10 @@ El sistema realiza una reboninación completa. No se guardará ni el cambio de e
 
 ### Measurable Outcomes
 
-- **FR-001:** El 100% de las modificaciones de estado generan un registro de auditoría completo con marca de tiempo precisa, usuario responsable y estado previo. 
+- **FR-001**: El 100% de las modificaciones de estado generan un registro de auditoría completo con marca de tiempo precisa, usuario responsable y estado previo. 
 
-- **FR-002:** El 0% de las transiciones de estado no permitidas son procesadas por el sistema.
+- **FR-002**: El 0% de las transiciones de estado no permitidas son procesadas por el sistema.
 
-- **FR-003:** Los intentos de cambio de estado por usuarios no autorizados son bloqueados en el 100% de los casos. 
+- **FR-003**: Los intentos de cambio de estado por usuarios no autorizados son bloqueados en el 100% de los casos. 
 
-- **FR-004:** Los cambios de estado se reflejan en la base de datos y en la interfaz de usuario en menos de 1 segundo bajo carga nominal.
+- **FR-004**: Los cambios de estado se reflejan en la base de datos y en la interfaz de usuario en menos de 1 segundo bajo carga nominal.
