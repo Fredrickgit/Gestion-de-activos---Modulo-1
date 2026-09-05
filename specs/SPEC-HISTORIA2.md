@@ -66,9 +66,9 @@ El sistema debe manejar filtros parciales, ignorando los criterios vacíos y apl
 
 ### Key Entities *(include if feature involves data)*
 
-- **[Entity 1]**: [Activo] [ID, nombre, tipo {enlazado a tipo-Activo}, estado físico, ubicación {enlazado a espacio}, estado de disponibilidad]
+- **[Entity 1]**: [Activo] [ID, nombre, tipo {enlazado a una categoria}, estado físico{enlazado a una categoria}, ubicacion{enlazado a un Espacio}, estado de disponibilidad, plazo máximo de devolución]
 
-- **[Entity 2]**: [Espacio] [ID, nombre, aforo máximo, equipamiento {enlazado a activo}, ubicación {enlazado a su propia entidad}, facultad {enlazado a su propia entidad}]
+- **[Entity 2]**: [Espacio] [ID, nombre, aforo maximo, equipamiento{enlazado a varios Activos}, ubicacion{enlazado a su propia entidad}, facultad{enlazado a su propia entidad}, estado de disponibilidad ]
 
 - **[Entity 3]**: [tipo-Activo] [ID, nombre, descripción]
 

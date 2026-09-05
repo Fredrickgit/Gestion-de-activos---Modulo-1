@@ -96,9 +96,9 @@ El sistema debe ejecutar una reversión atómica (rollback) garantizando que no 
 
 ### Key Entities *(include if feature involves data)*
 
-- **[Entity 1]**: [Activo] [ID / Placa de inventario, nombre, tipo {enlazado a tipo-Activo}, estado físico, ubicación {enlazado a espacio}, estado de disponibilidad inicial (ej. Disponible)]
+- **[Entity 1]**: [Activo] [ID, nombre, tipo {enlazado a una categoria}, estado físico{enlazado a una categoria}, ubicacion{enlazado a un Espacio}, estado de disponibilidad, plazo máximo de devolución]
 
-- **[Entity 2]**: [Espacio] [ID, nombre, aforo máximo, equipamiento {enlazado a activo o catálogo de equipamiento}, ubicación {enlazado a su propia entidad}, facultad {enlazado a su propia entidad}, estado de disponibilidad inicial (ej. Disponible)]
+- **[Entity 2]**: [Espacio] [ID, nombre, aforo maximo, equipamiento{enlazado a varios Activos}, ubicacion{enlazado a su propia entidad}, facultad{enlazado a su propia entidad}, estado de disponibilidad ]
 
 - **[Entity 3]**: [tipo-Activo] [ID, nombre, descripción]
 
