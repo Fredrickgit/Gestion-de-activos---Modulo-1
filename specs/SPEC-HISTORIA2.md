@@ -1,7 +1,7 @@
 # Feature Specification: [CONSULTAR INVENTARIOS]
 **Created**: [29/08/2026]
 
-### User Story 1 - [Consultar Inventarios] (Priority: P2)
+### User Story 2 - [Consultar Inventarios] (Priority: P2)
 
 [La Dirección Universitaria y los monitores encargados de revisar los recursos necesitan un medio para consultar el inventario de recursos. De esta manera, podrán visualizar los recursos registrados y sus respectivos atributos. Asimismo, si necesitan revisar un recurso en concreto, podrán encontrarlo mediante la búsqueda utilizando estos mismos atributos.]
 
