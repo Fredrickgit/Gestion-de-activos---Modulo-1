@@ -41,7 +41,7 @@ El sistema debe devolver un mensaje claro indicando que el atributo de búsqueda
 El sistema no mostrará los recursos de la base de datos que se hayan dado de baja, pero seguirán existiendo. ################# falta definir
 
 - [El usuario consulta todos los recursos del inventario cuando hay una gran cantidad de registros (ej: 10,000 recursos)]
-El sistema debe implementar paginación para mostrar los resultados de manera ordenada y eficiente, evitando sobrecarga en el cliente.
+El sistema debe implementar paginación de máximo 20 recursos por página para mostrar los resultados de manera ordenada y eficiente, evitando sobrecarga en el cliente.
 
 - [El usuario realiza una búsqueda con criterios múltiples pero algunos de ellos están vacíos o son inválidos]
 El sistema debe manejar filtros parciales, ignorando los criterios vacíos y aplicando solo los válidos, o en su defecto mostrar un mensaje de error claro.
@@ -60,7 +60,7 @@ El sistema debe manejar filtros parciales, ignorando los criterios vacíos y apl
 
 - **FR-005**: El sistema DEBE sanitizar [todas las entradas de usuario (nombres de recursos, filtros de búsqueda, IDs) para prevenir ataques de inyección y manejar caracteres especiales adecuadamente]
 
-- **FR-006**: El sistema DEBE implementar [paginación o limitación de resultados cuando las consultas devuelvan grandes conjuntos de datos, previniendo degradación del rendimiento y problemas de tiempo de espera]
+- **FR-006**:El sistema DEBE implementar [paginación con un máximo de 20 recursos por página cuando las consultas devuelvan grandes conjuntos de datos, previniendo degradación del rendimiento y problemas de tiempo de espera]
 
 - **FR-007**: El sistema DEBE [validar que los atributos de búsqueda utilizados existan en el sistema, devolviendo un mensaje de error si el usuario intenta buscar por un atributo no soportado]
 
@@ -88,6 +88,6 @@ El sistema debe manejar filtros parciales, ignorando los criterios vacíos y apl
 
 - **FR-004**: El 100% de las consultas de recursos con filtros inválidos devuelven un mensaje de error claro y accionable, guiando al usuario hacia los atributos de búsqueda soportados.
 
-- **FR-005**: El sistema reduce en un 90% los tiempos de espera para consultas de inventario mediante la implementación de paginación para conjuntos de datos de más de 50 recursos.
+- **FR-005**:El sistema reduce en un 90% los tiempos de espera para consultas de inventario mediante la implementación de paginación de máximo 20 recursos por página para conjuntos de datos que superen ese límite.
 
 - **FR-006**: El 100% de los intentos de acceso no autorizados al inventario son bloqueados con un mensaje de "Acceso denegado", garantizando la seguridad de la información.
