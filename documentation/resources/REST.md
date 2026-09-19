@@ -31,6 +31,6 @@ Desde la perspectiva de M1, este módulo es la autoridad del inventario físico 
 
 | Rol | Descripción |
 |-----|-------------|
-| **Servidor REST principal (autoridad del inventario)** | M1 expone el catálogo de recursos, la consulta de disponibilidad, la actualización de estados y la generación de reportes de inventario. Es la fuente de verdad de los atributos de cada Activo y Espacio, y del ciclo de vida (`Disponible`, `Reservado`, `Bloqueo Académico`, `En Uso`, `En Mantenimiento`). |
+| **Servidor REST principal (autoridad del inventario)** | M1 expone el catálogo de recursos, la consulta de disponibilidad, la actualización de estados y la generación de reportes de inventario. Es la fuente de verdad de los atributos de cada Activo y Espacio, y del ciclo de vida (`Disponible`, `En Uso`, `En Mantenimiento`). |
 | **Cliente REST ocasional (validación cruzada)** | Antes de permitir ciertas transiciones de estado, M1 consulta a M2 si el recurso tiene reservas activas vigentes (para no liberar un recurso reservado) y a M3 si el recurso tiene novedades técnicas pendientes. Estas consultas son síncronas y de solo lectura, con timeout corto. |
 | **NO es responsable de** | M1 no valida sanciones de usuarios ni gestiona reservas ni aplica penalizaciones. Esas son responsabilidades de M2 (reglas de reserva) y M3 (sanciones y analítica). M1 solo almacena el estado resultante. |
