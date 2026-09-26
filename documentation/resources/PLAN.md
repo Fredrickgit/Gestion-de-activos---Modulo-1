@@ -123,14 +123,16 @@ Las dependencias en el codigo SOLO pueden apuntar hacia adentro:
        
 ### Technical extras
   
-**A. CONTRATO DE COMUNICACIÓN ASÍNCRONA (PILA / COLA - PILA.md)**
-   - Eventos a consumir (Inbound):
+**A. CONTRATO DE COMUNICACIÓN ASÍNCRONA (PILA / COLA)**
+   - **Propósito y Principios:** Comunicación asíncrona, transaccional y priorizada (Garantía ACID, At-least-once, Orden FIFO/LIFO, ACK + Reintentos, DLQ).
+   - **Rol del Módulo 1:** Consumidor primario de eventos críticos (uso, daños) para transiciones de estado, productor secundario de cambios manuales y garante de idempotencia.
+   - Eventos a consumir (Inbound): Notificaciones de inicio de uso/reserva (M2), `reserva.finalizada` y `reporte.daños` (M3).
+   - Eventos a producir (Outbound): `estado.actualizado` ante cambios manuales de la Dirección Universitaria.
+   - Estrategia de Dead Letter Queue (DLQ): Envío de mensajes fallidos tras N reintentos para revisión manual.
 
-   - Eventos a producir (Outbound):
-
-   - Estrategia de Dead Letter Queue (DLQ):
-
-**B. CONTRATOS DE API REST (ENDPOINTS SÍNCRONOS - REST.md)**
+**B. CONTRATOS DE API REST (ENDPOINTS SÍNCRONOS)**
+   - **Principios de Diseño:** Stateless, cliente-servidor, cacheable, interfaz uniforme y versionado `/api/v1/`.
+   - **Rol del Módulo 1:** Servidor principal de inventario (autoridad de activos, espacios y estados) y cliente ocasional para validaciones cruzadas.
    - GET  /api/v1/recursos                  -> Listado paginado con filtros (tipo, estado, facultad).
    - GET  /api/v1/recursos/{id}             -> Detalle completo del activo o espacio.
    - GET  /api/v1/recursos/{id}/disponibilidad -> Estado de disponibilidad actual.
@@ -143,7 +145,8 @@ Las dependencias en el codigo SOLO pueden apuntar hacia adentro:
    - Pruebas unitarias aisladas para la máquina de estados de recursos.
    - Pruebas de integración con base de datos real usando Testcontainers.
    - Pruebas de idempotencia simulando entrega duplicada de eventos de cola.
-   
+  
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Project initialization and basic structure
