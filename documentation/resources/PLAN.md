@@ -145,6 +145,163 @@ Las dependencias en el codigo SOLO pueden apuntar hacia adentro:
    - Pruebas unitarias aisladas para la máquina de estados de recursos.
    - Pruebas de integración con base de datos real usando Testcontainers.
    - Pruebas de idempotencia simulando entrega duplicada de eventos de cola.
+
+## Diseño y Definición de Endpoints de la API - Módulo 1 (M1)
+ 
+Para que el **Módulo 1 (M1)** permita la conexión y consumo por parte de los demás módulos mediante **API REST (endpoints síncronos)**, el diseño sigue los principios de Clean Architecture y RESTful, sirviendo como la fuente de verdad única del inventario físico y sus estados.
+ 
+### 1. Estándares y Convenciones Generales
+* **Prefijo base:** `/api/v1/`
+* **Formato de intercambio:** `application/json` (tanto para peticiones como para respuestas).
+* **Autenticación / Autorización:** Mediante cabeceras de seguridad (ej. tokens JWT o API Keys internas entre servicios).
+* **Manejo de Errores:** Respuestas estándar HTTP con códigos de estado claros (`200`, `201`, `400`, `404`, `500`) acompañados de un JSON descriptivo del error.
+* **Nota de identificadores:** `id_activo` / `id_espacio` son enteros autoincrementales a nivel de base de datos (`diagrama-b-d-script.postgresql`); la API los expone como `id` (string) para no acoplar el contrato público al tipo de dato interno.
+### 2. Definición Detallada de Endpoints
+ 
+#### A. Catálogo y Consultas Generales (M1 como servidor)
+ 
+**1. Listado paginado de recursos (Activos y Espacios)**
+Permite filtrar el inventario según tipo, estado actual o facultad para procesos de validación o visualización.
+* **Método y Ruta:** `GET /api/v1/recursos`
+* **Origen:** Dirección Universitaria, Monitor de Recursos
+* **Nota:** Acceso exclusivo de M1 (Dirección Universitaria / Monitor). Ningún otro módulo tiene acceso al catálogo completo; M2 y M3 solo consultan lo que sus propias funciones requieren (ver punto 3, `GET /disponibilidad`). Consistente con `UseCaseDiagram.png` (la caja "Consultar inventarios" solo recibe flechas de Monitor y Dirección Universitaria) y `SPEC-HISTORIA2.md`, que escopea esta funcionalidad a esos dos roles.
+* **Parámetros de consulta (Query Params):**
+  * `tipo` (opcional): `activo` | `espacio`
+  * `estado` (opcional): `DISPONIBLE` | `EN_USO` | `EN_MANTENIMIENTO`
+  * `facultad` (opcional): ID o nombre de la facultad.
+  * `page` (opcional, por defecto `0`)
+  * `size` (opcional, por defecto `20`)
+* **Respuesta Exitosa (`200 OK`):**
+```json
+  {
+    "content": [
+      {
+        "id": "uuid-recurso-123",
+        "codigo": "ACT-FI-001",
+        "nombre": "Videobeam Epson Pro",
+        "tipo": "ACTIVO",
+        "estado": "DISPONIBLE",
+        "facultad": "Ingeniería"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 1
+  }
+```
+* **Errores:** `400` (parámetro `estado`/`tipo` inválido), `401`/`403` (sin autorización).
+**2. Detalle completo de un recurso**
+* **Método y Ruta:** `GET /api/v1/recursos/{id}`
+* **Origen:** Dirección Universitaria, Monitor de Recursos
+* **Nota:** Mismo criterio que el punto 1 — el detalle completo (ubicación, facultad, plazo de devolución, etc.) es información de catálogo, no de disponibilidad operativa; queda fuera del alcance de M2/M3.
+* **Respuesta Exitosa (`200 OK`):**
+```json
+  {
+    "id": "uuid-recurso-123",
+    "codigo": "ACT-FI-001",
+    "nombre": "Videobeam Epson Pro",
+    "tipo": "ACTIVO",
+    "estadoFisico": "OPTIMO",
+    "estado": "DISPONIBLE",
+    "ubicacion": "Laboratorio de Redes",
+    "facultad": "Ingeniería",
+    "plazoMaximoDevolucion": "2026-10-05T18:00:00-05:00"
+  }
+```
+* **Errores:** `404` (recurso no encontrado o dado de baja).
+**3. Estado de disponibilidad actual**
+Corresponde al caso de uso "Consultar disponibilidad de los Recursos", consumido de forma síncrona por M2 y M3 antes de resolver una reserva o registrar una novedad.
+* **Método y Ruta:** `GET /api/v1/recursos/{id}/disponibilidad`
+* **Origen → Destino:** M2 → M1, M3 → M1
+* **Respuesta Exitosa (`200 OK`):**
+```json
+  {
+    "id": "uuid-recurso-123",
+    "estado": "EN_USO",
+    "horarioAsignado": {
+      "inicio": "2026-09-26T14:00:00-05:00",
+      "fin": "2026-09-26T16:00:00-05:00"
+    }
+  }
+```
+* **Errores:** `404` (recurso inexistente), `400` (fecha/hora de consulta con formato inválido).
+#### B. Registro de Recursos (M1 como servidor)
+ 
+**4. Registro de un nuevo activo**
+* **Método y Ruta:** `POST /api/v1/activos`
+* **Origen:** Dirección Universitaria
+* **Cuerpo de la petición:**
+```json
+  {
+    "nombre": "Microscopio Óptico #5",
+    "tipo": "MICROSCOPIO",
+    "estadoFisico": "NUEVO",
+    "ubicacionId": "uuid-espacio-45"
+  }
+```
+* **Respuesta Exitosa (`201 Created`):** Recurso creado con `estado: "DISPONIBLE"` asignado automáticamente.
+* **Errores:** `400` (campos obligatorios faltantes o inválidos), `409` (identificador/placa duplicada).
+**5. Registro de un nuevo espacio**
+* **Método y Ruta:** `POST /api/v1/espacios`
+* **Origen:** Dirección Universitaria
+* **Cuerpo de la petición:**
+```json
+  {
+    "nombre": "Laboratorio de Telecomunicaciones",
+    "aforoMaximo": 30,
+    "equipamiento": ["uuid-activo-10", "uuid-activo-11"],
+    "facultadId": "uuid-facultad-02"
+  }
+```
+* **Respuesta Exitosa (`201 Created`):** Espacio creado con `estado: "DISPONIBLE"` asignado automáticamente.
+* **Errores:** `400` (aforo inválido, campos faltantes), `409` (ID duplicado), `422` (facultad/equipamiento inexistente — integridad referencial).
+#### C. Actualización de Estado (M1 como servidor)
+ 
+**6. Actualización manual de estado**
+Usado por Dirección Universitaria / Monitor de Recursos para cambios manuales fuera del flujo de eventos de Pila/Cola; dispara el evento `estado.actualizado` (ver contrato asíncrono) hacia M2 y M3.
+* **Método y Ruta:** `PATCH /api/v1/recursos/{id}/estado`
+* **Origen:** Dirección Universitaria, Monitor de Recursos
+* **Relación con `SPEC-HISTORIA3.md` (FR-001):** esa spec autoriza también a Módulo 2 y Módulo 3 a "actualizar el estado de un recurso", pero no define el canal técnico. Este `PATCH` **no** es ese canal para M2/M3: es la vía síncrona de actualización manual, reservada a los roles humanos (Dirección Universitaria, Monitor), sin garantía ACID entre módulos (`REST.md` §1). M2 y M3 cumplen FR-001 a través de los eventos asíncronos ya definidos en el contrato Pila/Cola — `notificar-uso` (M2→M1) y `reserva-finalizada` / `reporte-de-daños` (M3→M1) — que sí ofrecen la garantía ACID e idempotencia que `PILA.md` exige para eventos críticos de estado. Ambos flujos conviven sin contradicción: mismo resultado (transición de estado auditada), canal distinto según el tipo de actor.
+* **Cuerpo de la petición:**
+```json
+  {
+    "nuevoEstado": "EN_MANTENIMIENTO",
+    "motivo": "Revisión técnica programada"
+  }
+```
+* **Respuesta Exitosa (`200 OK`):**
+```json
+  {
+    "id": "uuid-recurso-123",
+    "estadoAnterior": "DISPONIBLE",
+    "estadoNuevo": "EN_MANTENIMIENTO",
+    "auditoria": {
+      "usuario": "direccion.universitaria@unimag.edu.co",
+      "timestamp": "2026-09-26T10:00:00-05:00"
+    }
+  }
+```
+* **Errores:** `400` (transición no permitida por la máquina de estados), `404` (recurso no encontrado), `409` (recurso ya está en el estado solicitado o versión desactualizada — control de concurrencia optimista).
+#### D. Validación Cruzada Saliente (M1 como cliente)
+ 
+Llamadas síncronas, de solo lectura y con timeout corto, que M1 realiza antes de autorizar una transición crítica de estado (p. ej. liberar o poner en mantenimiento un recurso).
+ 
+**7. Consulta de reservas activas (M1 → M2)**
+* **Método y Ruta:** `GET {m2-base-url}/api/v1/reservas/activas?recursoId={id}`
+* **Propósito:** Confirmar que el recurso no tenga una reserva vigente antes de liberarlo.
+* **Respuesta esperada:**
+```json
+  { "recursoId": "uuid-recurso-123", "tieneReservaActiva": false }
+```
+ 
+**8. Consulta de novedades técnicas pendientes (M1 → M3)**
+* **Método y Ruta:** `GET {m3-base-url}/api/v1/novedades/pendientes?recursoId={id}`
+* **Propósito:** Confirmar que no existan novedades técnicas sin resolver antes de una transición crítica.
+* **Respuesta esperada:**
+```json
+  { "recursoId": "uuid-recurso-123", "tieneNovedadPendiente": false }
+```
+* **Errores comunes a D:** `504`/timeout (se trata como fallo de validación; M1 no ejecuta la transición y responde `409` al llamador original).
   
 
 ## Phase 1: Setup (Shared Infrastructure)
