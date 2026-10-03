@@ -40,51 +40,49 @@ gestion-de-activos---modulo-1/backend/
 │   │
 │   ├── domain/                         # CAPA 1: Negocio puro (sin dependencias)
 │   │   ├── entities/                   # Modelos de dominio
-│   │   │   ├── example              # Activo, Espacio, EstadoDisponibilidad
-│   │   │   └── example              # Franjas horarias, bloqueos
+│   │   │   ├── Activo
+│   │   │   ├── Espacio
+│   │   │   └── EstadoDisponibilidad
 │   │   ├── repositories/               # Interfaces / Contratos (Ports)
-│   │   │   └── example   # "class RecursoRepository(ABC): ..."
+│   │   │   └── RecursoRepository       # "interface RecursoRepository: ..."
 │   │   └── exceptions/                 # Errores propios del negocio
-│   │       └── example   # RecursoNoEncontradoError
+│   │       └── RecursoNoEncontradoError
 │   │
 │   ├── application/                    # CAPA 2: Casos de uso
-│   │   ├── use_cases/
-│   │   │   ├── consulta_disponibilidad  # HU-0: Consulta por ID o categoria
-│   │   │   └── creacion_recurso
-│   │   │   └── actualización_recurso
-│   │   │   └── generar_reporte
-│   │   │   └── consulta_inventarios
-│   │   └── dtos/                       # Estructuras de datos de entrada/salida
-│   │       ├── consulta_request_dto
-│   │       └── disponibilidad_response_dto
+│   │   └── useCases/
+│   │       ├── consultaDisponibilidad  # HU-0: Consulta por ID o categoria
+│   │       ├── creacionRecurso
+│   │       ├── actualizacionRecurso
+│   │       ├── generarReporte
+│   │       └── consultaInventarios
 │   │
-│   ├── infrastructure/                 # CAPA 3: Herramientas y adaptadores externos
-│   │   ├── database/                   # Configuracion de BD y modelos ORM
-│   │   │   ├── connection
-│   │   │   └── models               # Tablas en BD (SQLAlchemy, Mongo, etc.)
-│   │   ├── repositories/               # Implementaciones reales de los contratos
-│   │   │   └── postgres_recurso_repo   # Implementa RecursoRepository
-│   │   └── external/                   # Comunicacion con otros servicios
-│   │       └── modulo2_client
-│   │       └── modulo3_client          # Cliente para interactuar con Modulo 2
-│   │
-│   └── presentation/                   # CAPA 4: Controladores y Web API
-│       ├── api/                        # Rutas / Endpoints REST
-│       │   └── v1/
-│       │       └── recursos_controller
-│       ├── schemas/                    # Validacion de payloads (Pydantic / Joi / DTOs web)
-│       │   └── recurso_schemas
-│       └── middlewares/                # Manejadores globales de errores, CORS, auth
-│           └── error_handler
+│   └── infrastructure/                 # CAPA 3: Adaptadores y detalles externos (incluye la antigua "presentation": controladores y API son Infraestructura en Clean Architecture)
+│       ├── database/                   # Configuracion de BD y modelos ORM
+│       │   ├── connection
+│       │   └── models                  # Tablas en BD (SQLAlchemy, Mongo, etc.)
+│       ├── repositories/               # Implementaciones reales de los contratos
+│       │   └── postgresRecursoRepo     # Implementa RecursoRepository
+│       ├── external/                   # Comunicacion con otros servicios
+│       │   ├── modulo2Client           # Cliente para interactuar con Modulo 2
+│       │   └── modulo3Client           # Cliente para interactuar con Modulo 3
+│       └── api/                        # Rutas / Endpoints REST y controladores
+│           ├── v1/
+│           │   └── recursosController
+│           ├── dtos/                   # Estructuras de entrada/salida de los endpoints (antes mal ubicadas en application)
+│           │   ├── consultaRequestDto
+│           │   └── disponibilidadResponseDto
+│           ├── schemas/                # Validacion de payloads (Pydantic / Joi)
+│           │   └── recursoSchemas
+│           └── middlewares/            # Manejadores globales de errores, CORS, auth
+│               └── errorHandler
 │
 ├── tests/                              # Pruebas automatizadas
 │   ├── unit/                           # Pruebas a Casos de Uso y Entidades (rapidas, sin BD)
 │   └── integration/                    # Pruebas a Repositorios reales y Endpoints
 │
-└── main                # Punto de entrada e Inyeccion de Dependencias
-
+└── main                                # Punto de entrada e Inyeccion de Dependencias
+ 
 ```
-
 
 ## Architecture Design:
 
