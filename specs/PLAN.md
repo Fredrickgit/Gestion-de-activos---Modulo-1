@@ -11,13 +11,13 @@ El MODULO 1 de GESTION DE ACTIVOS UNIVERSITARIOS es la fuente de verdad única y
 ## Technical Context
 
     **Language/Version**: [Java LTS 21]
-    **Primary Dependencies**: [Springboot,React] 
+    **Primary Dependencies**: [Springboot,React,Kafka] 
     **Storage**: [Base de datos en PostgreSQL]
     **Testing**: [Mockito, testcontainers]
-    **Target Platform**: [Dispositivos Windows/Linux/Mac en desktop]
+    **Target Platform**: [Dispositivos Windows/Linux/Mac en web]
     **Project Type**: [Web para manejo de una base de datos alojada por la Universidad]
     **Performance Goals**: [Fuerte seguridad transaccional, velocidades de consulta de disponibilidad e inventario menores a 2.5 segundos con conexión estable y paginación, estabilidad con gran carga de datos a la base de datos y/o peticiones]
-    **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
+    **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable]
     **Scale/Scope**: [+25.0000 usuarios diferentes con capacidad de revisión de la BD, ±1k usuarios en un día hábil de uso]
 
 
