@@ -82,28 +82,18 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Esquema Payload JSON:**
 ```json
 {
-  "evento_id": "evt-7f8b9a12-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
-  "tipo_evento": "notificacion.uso",
-  "version_esquema": "1.0",
+  "eventId": "evt-7f8b9a12-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+  "type": "ResourceUseStarted",
+  "version": "1.0",
   "timestamp": "2026-10-02T08:30:00-05:00",
-  "origen": "MODULO_2",
-  "datos": {
-    "recurso_id": 104,
-    "tipo_recurso": "ACTIVO",
-    "id_reserva_m2": "RES-2026-9812",
-    "usuario_solicitante": {
-      "codigo_estudiantil": "2021114000",
-      "nombre": "Carlos Mendoza",
-      "correo": "estudiante@unimagdalena.edu.co"
-    },
-    "operador_entrega": {
-      "id_usuario": "usr-monitor-05",
-      "nombre": "Monitor Ventanilla",
-      "correo": "monitor.activos@unimagdalena.edu.co"
-    },
-    "fecha_inicio": "2026-10-02T08:30:00-05:00",
-    "fecha_fin_estimada": "2026-10-02T12:30:00-05:00",
-    "observaciones": "Entrega de equipo con accesorios completos."
+  "source": "MODULO_2",
+  "data": {
+    "resourceId": 104,
+    "resourceCategory": "ACTIVO",
+    "reservationId": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
+    "occupancy": { "start": "2026-09-01T10:00:00-05:00", "end": "2026-09-01T12:00:00-05:00" },
+    "newStatus": "EN_USO",
+    "reason": "USE_STARTED"
   }
 }
 ```
@@ -116,28 +106,18 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Esquema Payload JSON:**
 ```json
 {
-  "evento_id": "evt-9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d",
-  "tipo_evento": "reserva.finalizada",
-  "version_esquema": "1.0",
+  "eventId": "evt-9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d",
+  "type": "EndedReservation",
+  "version": "1.0",
   "timestamp": "2026-10-02T12:25:00-05:00",
-  "origen": "MODULO_3",
-  "datos": {
-    "recurso_id": 104,
-    "tipo_recurso": "ACTIVO",
-    "id_reserva_m2": "RES-2026-9812",
-    "id_checkout_m3": "CHK-2026-4431",
-    "usuario_receptor": {
-      "id_usuario": "usr-monitor-02",
-      "nombre": "Monitor Recepción",
-      "correo": "monitor.recepcion@unimagdalena.edu.co"
-    },
-    "usuario_entrega": {
-      "codigo_estudiantil": "2021114000",
-      "correo": "estudiante@unimagdalena.edu.co"
-    },
-    "fecha_devolucion_real": "2026-10-02T12:25:00-05:00",
-    "estado_fisico_constatado": "OPTIMO",
-    "observaciones": "Entrega limpia y completa de accesorios en ventanilla."
+  "source": "MODULO_3",
+  "data": {
+    "resourceId": 104,
+    "resourceCategory": "ACTIVO",
+    "id_reservation_m2": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
+    "id_checkout_m3": "8f4c1d2e-5b67-4a67-2c1d-2f9e2a1b2c11",
+    "realcheckoutdate": "2026-10-02T12:25:00-05:00",
+    "physical_status": "OPTIMO"
   }
 }
 ```
@@ -150,68 +130,22 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Esquema Payload JSON:**
 ```json
 {
-  "evento_id": "evt-3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
-  "tipo_evento": "reporte.danos",
-  "version_esquema": "1.0",
+  "eventoId": "evt-3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+  "type": "DamageReport",
+  "version": "1.0",
   "timestamp": "2026-10-02T12:28:00-05:00",
-  "origen": "MODULO_3",
-  "datos": {
-    "recurso_id": 104,
-    "tipo_recurso": "ACTIVO",
-    "id_reserva_m2": "RES-2026-9812",
+  "source": "MODULO_3",
+  "data": {
+    "resourceId": 104,
+    "recourseCategory": "ACTIVO",
+    "id_reservation_m2": "RES-2026-9812",
     "id_novedad_m3": "NOV-2026-0092",
-    "usuario_reporta": {
-      "id_usuario": "usr-monitor-02",
-      "nombre": "Monitor Recepción",
-      "correo": "monitor.recepcion@unimagdalena.edu.co"
+    "student": {
+      "student_code": "2021114000",
+      "mail": "estudiante@unimagdalena.edu.co"
     },
-    "usuario_involucrado": {
-      "codigo_estudiantil": "2021114000",
-      "correo": "estudiante@unimagdalena.edu.co"
-    },
-    "tipo_dano": "ROTURA_LENTE_OBJETIVO",
-    "gravedad": "ALTA",
-    "nuevo_estado_fisico": "DAÑADO",
-    "descripcion_tecnica": "Lente de inmersión 100x fracturado por golpe mecánico durante práctica.",
-    "requiere_baja": false
-  }
-}
-```
-
-#### D. Evento `bloqueo.academico` (Origen: M2)
-*   **Disparador:** M2 importa la carga académica semestral fija y notifica qué espacios quedan apartados para clases regulares.
-*   **Acción en M1:** Transiciona el recurso al estado `EN_USO` y genera registro de historial. %%%
-*   **Tópico:** `unimag.m2.reservas-eventos.v1` %%%
-*   **Message Key:** ID del recurso (ej. `"45"`)
-*   **Esquema Payload JSON:**
-```json
-{
-  "evento_id": "evt-5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e",
-  "tipo_evento": "bloqueo.academico",
-  "version_esquema": "1.0",
-  "timestamp": "2026-10-02T07:00:00-05:00",
-  "origen": "MODULO_2",
-  "datos": {
-    "recurso_id": 45,
-    "tipo_recurso": "ESPACIO",
-    "id_bloqueo_academico": "ACAD-2026-II-402",
-    "periodo_academico": "2026-II",
-    "codigo_asignatura": "ING-402",
-    "nombre_asignatura": "Redes de Computadores II",
-    "grupo": "1",
-    "docente_responsable": {
-      "codigo": "DOC-9912",
-      "nombre": "Ing. Roberto Gómez",
-      "correo": "docente.redes@unimagdalena.edu.co"
-    },
-    "horario": {
-      "dia_semana": "LUNES",
-      "hora_inicio": "08:00:00",
-      "hora_fin": "10:00:00"
-    },
-    "vigencia_desde": "2026-10-02T08:00:00-05:00",
-    "vigencia_hasta": "2026-12-15T10:00:00-05:00",
-    "observaciones": "Reserva institucional semestral para cátedra presencial."
+    "description": "rotura",
+    "physical_status": "DAÑADO",
   }
 }
 ```
