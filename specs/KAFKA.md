@@ -48,7 +48,6 @@ Desde la perspectiva de M1, este módulo es el **consumidor ACID principal** de 
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `unimag.m2.reservas-eventos.v1` @@@ | Inbound | Módulo 2 | M1 (`m1-activos-group`) | `recurso_id` (String) | 3 particiones %%% | Notificación de ocupación/inicio de reserva activa. |
 | `unimag.m3.uso-novedades.v1` @@@ | Inbound | Módulo 3 | M1 (`m1-activos-group`) | `recurso_id` (String) | 3 particiones %%% | Check-out regular y reportes de averías o daños. |
-| `unimag.m1.recursos-estados.v1` @@@ | Outbound | Módulo 1 | M2, M3 | `recurso_id` (String) | 3 particiones %%% | Cambios manuales de estado ejecutados directamente en M1. |
 | `unimag.m1.inbox.DLT` | Interno | Módulo 1 | M1 (Admin / Alerting) | `recurso_id` (String) | 1 partición %%% | Almacén de eventos venenosos o fallidos tras reintentos. |
 
 ### 4.2. Especificaciones de Configuración de Kafka
@@ -92,7 +91,7 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
     "resourceCategory": "ACTIVO",
     "reservationId": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
     "occupancy": { "start": "2026-09-01T10:00:00-05:00", "end": "2026-09-01T12:00:00-05:00" },
-    "newStatus": "EN_USO",
+    "newState": "EN_USO",
     "reason": "USE_STARTED"
   }
 }
@@ -117,7 +116,7 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
     "id_reservation_m2": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
     "id_checkout_m3": "8f4c1d2e-5b67-4a67-2c1d-2f9e2a1b2c11",
     "realcheckoutdate": "2026-10-02T12:25:00-05:00",
-    "physical_status": "OPTIMO"
+    "physical_state": "OPTIMO"
   }
 }
 ```
@@ -145,41 +144,10 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
       "mail": "estudiante@unimagdalena.edu.co"
     },
     "description": "rotura",
-    "physical_status": "DAÑADO",
+    "physical_state": "DAÑADO",
   }
 }
 ```
-
----
-
-### 5.3. Eventos de Salida (Outbound producidos por M1)
-
-#### Evento `estado.actualizado` (M1 ➔ M2 y M3) 
-*   **Disparador:** Dirección Universitaria o Monitor cambian manualmente el estado de un recurso a través de la API REST (`PATCH /api/v1/recursos/{id}/estado`).
-*   **Propósito:** Que M2 inhabilite de inmediato reservas sobre ese recurso.
-*   **Tópico:** `unimag.m1.recursos-estados.v1`
-*   **Message Key:** ID del recurso (ej. `"104"`)
-*   **Esquema Payload JSON:**
-```json
-{
-  "evento_id": "evt-11223344-5566-7788-99aa-bbccddeeff00",
-  "tipo_evento": "estado.actualizado",
-  "version_esquema": "1.0",
-  "timestamp": "2026-10-02T14:00:00-05:00",
-  "origen": "MODULO_1",
-  "datos": {
-    "recurso_id": 104,
-    "tipo_recurso": "ACTIVO",
-    "estado_anterior": "DISPONIBLE",
-    "estado_nuevo": "EN_MANTENIMIENTO",
-    "nuevo_estado_fisico": "MAL ESTADO",
-    "motivo": "Mantenimiento preventivo anual y calibración técnica de óptica",
-    "usuario_responsable": "direccion.activos@unimagdalena.edu.co",
-    "id_auditoria": 8921
-  }
-}
-```
-
 
 ---
 
