@@ -50,31 +50,31 @@ gestion-de-activos---modulo-1/backend/
 │   │
 │   ├── application/                    # CAPA 2: Casos de uso
 │   │   └── useCases/
-│   │       ├── consultaDisponibilidad  # HU-0: Consulta por ID o categoria
-│   │       ├── creacionRecurso
-│   │       ├── actualizacionRecurso
-│   │       ├── generarReporte
-│   │       └── consultaInventarios
+│   │       ├── ConsultaDisponibilidad  # HU-0: Consulta por ID o categoria
+│   │       ├── CreacionRecurso
+│   │       ├── ActualizacionRecurso
+│   │       ├── GenerarReporte
+│   │       └── ConsultaInventarios
 │   │
 │   └── infrastructure/                 # CAPA 3: Adaptadores y detalles externos (incluye la antigua "presentation": controladores y API son Infraestructura en Clean Architecture)
 │       ├── database/                   # Configuracion de BD y modelos ORM
-│       │   ├── connection
-│       │   └── models                  # Tablas en BD (SQLAlchemy, Mongo, etc.)
+│       │   ├── Connection
+│       │   └── Models                  # Tablas en BD (SQLAlchemy, Mongo, etc.)
 │       ├── repositories/               # Implementaciones reales de los contratos
-│       │   └── postgresRecursoRepo     # Implementa RecursoRepository
+│       │   └── PostgresRecursoRepo     # Implementa RecursoRepository
 │       ├── external/                   # Comunicacion con otros servicios
-│       │   ├── modulo2Client           # Cliente para interactuar con Modulo 2
-│       │   └── modulo3Client           # Cliente para interactuar con Modulo 3
+│       │   ├── Modulo2Client           # Cliente para interactuar con Modulo 2
+│       │   └── Modulo3Client           # Cliente para interactuar con Modulo 3
 │       └── api/                        # Rutas / Endpoints REST y controladores
 │           ├── v1/
-│           │   └── recursosController
+│           │   └── RecursosController
 │           ├── dtos/                   # Estructuras de entrada/salida de los endpoints (antes mal ubicadas en application)
-│           │   ├── consultaRequestDto
-│           │   └── disponibilidadResponseDto
+│           │   ├── ConsultaRequestDto
+│           │   └── DisponibilidadResponseDto
 │           ├── schemas/                # Validacion de payloads (Pydantic / Joi)
-│           │   └── recursoSchemas
+│           │   └── RecursoSchemas
 │           └── middlewares/            # Manejadores globales de errores, CORS, auth
-│               └── errorHandler
+│               └── ErrorHandler
 │
 ├── tests/                              # Pruebas automatizadas
 │   ├── unit/                           # Pruebas a Casos de Uso y Entidades (rapidas, sin BD)

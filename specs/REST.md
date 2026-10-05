@@ -62,7 +62,24 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
     *   `facultad` (opcional): ID o nombre de la facultad
     *   `page` (opcional, por defecto `0`)
     *   `size` (opcional, por defecto `20`)
-*   **Respuesta Exitosa (`200 OK`):**
+
+    **Query Methods del repositorio (`RecursoRepository`, puerto de dominio):**
+Derivados de `tipo` y `estado`; `page` y `size` se resuelven mediante el parámetro `Pageable` en los cuatro métodos, no como filtros adicionales.
+
+```java
+// Sin filtros (solo paginación: page & size)
+Page<Recurso> findAll(Pageable pageable);
+
+// Un filtro + paginación
+Page<Recurso> findByTipo(TipoRecurso tipo, Pageable pageable);
+Page<Recurso> findByEstado(EstadoRecurso estado, Pageable pageable);
+
+// Dos filtros combinados + paginación
+Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageable pageable);
+```
+    
+* **Payload Request Body:**
+
     ```json
     {
       "content": [
@@ -84,6 +101,8 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
     }
     ```
 
+*   **Respuesta Exitosa (`200 OK`):** Retorna el listado paginado de recursos que cumplen con los filtros aplicados, junto con los metadatos de paginación (`page`, `size`, `totalElements`).
+
 #### 2. Detalle completo de un recurso
 *   **Método y Ruta:** `GET /api/v1/recursos/{id}`
 *   **Propósito:** Obtener la información maestra, metadatos y atributos específicos de un activo o espacio mediante su identificador único.
@@ -92,7 +111,7 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
 #### 3. Consultar disponibilidad actual (US0)
 *   **Método y Ruta:** `GET /api/v1/recursos/{id}/disponibilidad`
 *   **Propósito:** Consultar en tiempo real si un recurso se encuentra disponible o el motivo específico de su inhabilitación (consultado frecuentemente por M2).
-*   **Respuesta Exitosa (`200 OK`):**
+*   **Payload Request Body:**
     ```json
     {
       "id": "uuid-recurso-123",
@@ -103,6 +122,7 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
     }
     ```
 
+   *   **Respuesta Exitosa (`200 OK`):** Retorna el estado de disponibilidad actual del recurso, incluyendo el horario de ocupación o el motivo de inhabilitación cuando aplique.
 ---
 
 ### B. Registro de Nuevos Recursos (US1)
@@ -168,3 +188,61 @@ M1 estandariza las respuestas de error mediante códigos HTTP claros acompañado
 | **403 Forbidden** | Acceso Denegado | Intento de ejecución de endpoints protegidos (como creación o modificación) por perfiles sin privilegios de Dirección Universitaria. |
 | **404 Not Found** | No Encontrado | Consulta de un ID de recurso o endpoint inexistente. |
 | **500 Internal Server Error** | Error de Servidor | Fallas inesperadas en infraestructura o base de datos durante la transacción. |
+
+Body Errors:
+
+### 400 Bad Request
+```json
+{
+  "timestamp": "2026-10-05T14:32:10Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "El campo 'aforoMaximo' debe ser un número positivo.",
+  "path": "/api/v1/espacios"
+}
+```
+ 
+### 401 Unauthorized
+```json
+{
+  "timestamp": "2026-10-05T14:32:10Z",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Credenciales de autenticación ausentes o inválidas en la cabecera de la solicitud.",
+  "path": "/api/v1/recursos"
+}
+```
+ 
+### 403 Forbidden
+```json
+{
+  "timestamp": "2026-10-05T14:32:10Z",
+  "status": 403,
+  "error": "Forbidden",
+  "message": "El rol actual no cuenta con privilegios de Dirección Universitaria para esta operación.",
+  "path": "/api/v1/activos"
+}
+```
+ 
+### 404 Not Found
+```json
+{
+  "timestamp": "2026-10-05T14:32:10Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "No se encontró un recurso con el id 'uuid-recurso-999'.",
+  "path": "/api/v1/recursos/uuid-recurso-999"
+}
+```
+ 
+### 500 Internal Server Error
+```json
+{
+  "timestamp": "2026-10-05T14:32:10Z",
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "Ocurrió un error inesperado al procesar la solicitud. Contacte al administrador del sistema.",
+  "path": "/api/v1/recursos/uuid-recurso-123/estado"
+}
+```
+

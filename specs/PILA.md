@@ -80,6 +80,27 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Tópico:** `unimag.m2.reservas-eventos.v1` %%%
 *   **Message Key:** ID del recurso
 *   **Esquema Payload JSON:**
+```json
+{
+  "evento_id": "evt-uso-20261005-0001",
+  "tipo_evento": "notificacion.uso",
+  "version": "1.0",
+  "timestamp": "2026-10-05T14:32:10Z",
+  "source_module": "MODULO_2",
+  "datos": {
+    "recurso_id": "uuid-recurso-123",
+    "tipo_recurso": "ESPACIO",
+    "codigo": "ESP-LAB-001",
+    "reserva_id": "uuid-reserva-789",
+    "usuario_id": "usuario-123",
+    "usuario_responsable": "monitor.salas",
+    "fecha_inicio": "2026-10-05T14:30:00Z",
+    "fecha_fin_estimada": "2026-10-05T16:30:00Z",
+    "estado_solicitado": "EN_USO",
+    "motivo": "Inicio de ocupación por reserva aprobada"
+  }
+}
+```
 
 #### B. Evento `reserva.finalizada` (Origen: M3) 
 *   **Disparador:** Módulo 3 registra un "Check-out Exitoso" (entrega a tiempo y en óptimas condiciones físicas del activo, o desocupación de espacio).
@@ -87,7 +108,28 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Tópico:** `unimag.m3.uso-novedades.v1` %%%
 *   **Message Key:** ID del recurso
 *   **Esquema Payload JSON:**
-
+```json
+{
+  "evento_id": "evt-checkout-20261005-0002",
+  "tipo_evento": "reserva.finalizada",
+  "version": "1.0",
+  "timestamp": "2026-10-05T16:35:00Z",
+  "source_module": "MODULO_3",
+  "datos": {
+    "recurso_id": "uuid-recurso-123",
+    "tipo_recurso": "ESPACIO",
+    "codigo": "ESP-LAB-001",
+    "reserva_id": "uuid-reserva-789",
+    "usuario_id": "usuario-123",
+    "usuario_responsable": "auxiliar.servicios",
+    "fecha_fin": "2026-10-05T16:30:00Z",
+    "id_estado_fisico": "OPTIMO",
+    "estado_solicitado": "DISPONIBLE",
+    "observacion": "Entrega a tiempo y sin novedades",
+    "motivo": "Check-out exitoso"
+  }
+}
+```
 
 #### C. Evento `reporte.danos` (Origen: M3) 
 *   **Disparador:** Módulo 3 registra una novedad técnica o daño físico durante la entrega o inspección técnica.
@@ -95,6 +137,29 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Tópico:** `unimag.m3.uso-novedades.v1` %%%
 *   **Message Key:** ID del recurso
 *   **Esquema Payload JSON:**
+```json
+{
+  "evento_id": "evt-dano-20261005-0003",
+  "tipo_evento": "reporte.danos",
+  "version": "1.0",
+  "timestamp": "2026-10-05T16:40:00Z",
+  "source_module": "MODULO_3",
+  "datos": {
+    "recurso_id": "uuid-recurso-123",
+    "tipo_recurso": "ACTIVO",
+    "codigo": "ACT-FI-001",
+    "reserva_id": "uuid-reserva-789",
+    "usuario_id": "usuario-123",
+    "usuario_responsable": "tecnico.mantenimiento",
+    "id_estado_fisico": "DAÑADO",
+    "estado_solicitado": "EN_MANTENIMIENTO",
+    "gravedad": "ALTA",
+    "descripcion": "Daño reportado en puerto de red principal",
+    "fecha_reporte": "2026-10-05T16:40:00Z",
+    "motivo": "Novedad técnica en inspección"
+  }
+}
+```
 
 #### D. Evento `bloqueo.academico` (Origen: M2)
 *   **Disparador:** M2 importa la carga académica semestral fija y notifica qué espacios quedan apartados para clases regulares.
