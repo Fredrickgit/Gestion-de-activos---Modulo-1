@@ -48,7 +48,6 @@ Desde la perspectiva de M1, este módulo es el **consumidor ACID principal** de 
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `unimag.m2.reservas-eventos.v1` @@@ | Inbound | Módulo 2 | M1 (`m1-activos-group`) | `recurso_id` (String) | 3 particiones %%% | Notificación de ocupación/inicio de reserva activa. |
 | `unimag.m3.uso-novedades.v1` @@@ | Inbound | Módulo 3 | M1 (`m1-activos-group`) | `recurso_id` (String) | 3 particiones %%% | Check-out regular y reportes de averías o daños. |
-| `unimag.m1.recursos-estados.v1` @@@ | Outbound | Módulo 1 | M2, M3 | `recurso_id` (String) | 3 particiones %%% | Cambios manuales de estado ejecutados directamente en M1. |
 | `unimag.m1.inbox.DLT` | Interno | Módulo 1 | M1 (Admin / Alerting) | `recurso_id` (String) | 1 partición %%% | Almacén de eventos venenosos o fallidos tras reintentos. |
 
 ### 4.2. Especificaciones de Configuración de Kafka
@@ -78,42 +77,77 @@ Todos los mensajes producidos y consumidos a través de Kafka deben incluir las 
 *   **Disparador:** Un usuario inicia la ocupación de un espacio o retira físicamente el activo en ventanilla tras validación satisfactoria de M2.
 *   **Acción en M1:** Transiciona el recurso al estado `EN_USO` y genera registro de historial.
 *   **Tópico:** `unimag.m2.reservas-eventos.v1` %%%
-*   **Message Key:** ID del recurso
+*   **Message Key:** ID del recurso (ej. `"104"`)
 *   **Esquema Payload JSON:**
+```json
+{
+  "eventId": "evt-7f8b9a12-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+  "type": "ResourceUseStarted",
+  "version": "1.0",
+  "timestamp": "2026-10-02T08:30:00-05:00",
+  "source": "MODULO_2",
+  "data": {
+    "resourceId": 104,
+    "resourceCategory": "ACTIVO",
+    "reservationId": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
+    "occupancy": { "start": "2026-09-01T10:00:00-05:00", "end": "2026-09-01T12:00:00-05:00" },
+    "newState": "EN_USO",
+    "reason": "USE_STARTED"
+  }
+}
+```
 
 #### B. Evento `reserva.finalizada` (Origen: M3) 
 *   **Disparador:** Módulo 3 registra un "Check-out Exitoso" (entrega a tiempo y en óptimas condiciones físicas del activo, o desocupación de espacio).
 *   **Acción en M1:** Transiciona el recurso al estado `DISPONIBLE` y genera registro de auditoría.
 *   **Tópico:** `unimag.m3.uso-novedades.v1` %%%
-*   **Message Key:** ID del recurso
+*   **Message Key:** ID del recurso (ej. `"104"`)
 *   **Esquema Payload JSON:**
-
+```json
+{
+  "eventId": "evt-9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d",
+  "type": "EndedReservation",
+  "version": "1.0",
+  "timestamp": "2026-10-02T12:25:00-05:00",
+  "source": "MODULO_3",
+  "data": {
+    "resourceId": 104,
+    "resourceCategory": "ACTIVO",
+    "id_reservation_m2": "9f3c1d7e-5b42-4a19-8c0d-2f7e6a1b3c45",
+    "id_checkout_m3": "8f4c1d2e-5b67-4a67-2c1d-2f9e2a1b2c11",
+    "realcheckoutdate": "2026-10-02T12:25:00-05:00",
+    "physical_state": "OPTIMO"
+  }
+}
+```
 
 #### C. Evento `reporte.danos` (Origen: M3) 
 *   **Disparador:** Módulo 3 registra una novedad técnica o daño físico durante la entrega o inspección técnica.
 *   **Acción en M1:** Transiciona la disponibilidad del recurso a `EN_MANTENIMIENTO`, actualiza el `id_estado_fisico` a `MAL_ESTADO` o `DAÑADO` y registra la novedad en `Historial_Recurso`.
 *   **Tópico:** `unimag.m3.uso-novedades.v1` %%%
-*   **Message Key:** ID del recurso
+*   **Message Key:** ID del recurso (ej. `"104"`)
 *   **Esquema Payload JSON:**
-
-#### D. Evento `bloqueo.academico` (Origen: M2)
-*   **Disparador:** M2 importa la carga académica semestral fija y notifica qué espacios quedan apartados para clases regulares.
-*   **Acción en M1:** Transiciona el recurso al estado `EN_USO` y genera registro de historial. %%%
-*   **Tópico:** `unimag.m2.reservas-eventos.v1` %%%
-*   **Message Key:** ID del recurso
-*   **Esquema Payload JSON:**
-
----
-
-### 5.3. Eventos de Salida (Outbound producidos por M1)
-
-#### Evento `estado.actualizado` (M1 ➔ M2 y M3) 
-*   **Disparador:** Dirección Universitaria o Monitor cambian manualmente el estado de un recurso a través de la API REST (`PATCH /api/v1/recursos/{id}/estado`).
-*   **Propósito:** Que M2 inhabilite de inmediato reservas sobre ese recurso.
-*   **Tópico:** `unimag.m1.recursos-estados.v1`
-*   **Message Key:** ID del recurso
-*   **Esquema Payload JSON:**
-
+```json
+{
+  "eventoId": "evt-3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+  "type": "DamageReport",
+  "version": "1.0",
+  "timestamp": "2026-10-02T12:28:00-05:00",
+  "source": "MODULO_3",
+  "data": {
+    "resourceId": 104,
+    "recourseCategory": "ACTIVO",
+    "id_reservation_m2": "RES-2026-9812",
+    "id_novedad_m3": "NOV-2026-0092",
+    "student": {
+      "student_code": "2021114000",
+      "mail": "estudiante@unimagdalena.edu.co"
+    },
+    "description": "rotura",
+    "physical_state": "DAÑADO",
+  }
+}
+```
 
 ---
 
@@ -215,6 +249,6 @@ Cada mensaje que transiciona un estado en M1 impacta directamente la entidad `Hi
 | `id_recurso` | `datos.recurso_id` |
 | `estado_anterior` | Estado leído en la BD de M1 antes del update |
 | `estado_nuevo` | Estado destino (`EN_USO`, `DISPONIBLE`, `EN_MANTENIMIENTO`) |
-| `usuario_responsable` |  |
+| `usuario_responsable` | `datos.usuario_responsable` (Outbound) / `datos.usuario_solicitante.correo` (Uso) / `datos.usuario_receptor.correo` (Finalizada) / `datos.usuario_reporta.correo` (Daños) / `datos.docente_responsable.correo` (Bloqueo) |
 | `fecha_evento` | `timestamp` del evento |
 | `motivo` | `tipo_evento` |
