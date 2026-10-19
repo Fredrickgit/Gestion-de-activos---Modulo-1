@@ -46,10 +46,13 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
 *   **Formato de Intercambio:** JSON (`application/json`) estrictamente tipado para requests y responses.
 *   **Paginación Estandarizada:** Todas las consultas masivas soportan de forma predeterminada bloques de `size = 20` elementos por página, con controles de navegación y reseteo automático a la página 1 ante aplicación de filtros.
 *   **Sanitización y Seguridad:** Validación estricta de parámetros de entrada para prevenir ataques de inyección SQL y XSS, además de restricción por cabeceras de autorización de roles.
+*   **Identificadores:** todos los `{id}` de rutas REST, los `facultadId`, `ubicacionId` y los elementos de `equipamiento[]` son **UUID v4 en formato canónico** (`8-4-4-4-12`, minúsculas con guiones). Un path param con formato no-UUID retorna `400 Bad Request` antes de tocar la base de datos. El `codigo` (placa de inventario / código de espacio) es un String de negocio separado del `id`.  
 
 ---
 
 ## 5. Catálogo de Contratos y Endpoints Síncronos
+
+> **Nota de formato de ejemplos:** todos los `id`, `recursoId`, `facultadId`, `ubicacionId` y elementos de `equipamiento` son **UUID v4 en formato canónico** (`8-4-4-4-12`). Los valores mostrados son ilustrativos y copiables. Los campos `codigo`, `serial` y `facultad` (nombre) son strings de negocio, no UUID.
 
 ### A. Catálogo, Consultas e Inventarios (US0, US2, US4)
 
@@ -59,7 +62,7 @@ Desde la perspectiva de M1, este módulo es la **autoridad absoluta del inventar
 *   **Query Parameters:**
     *   `tipo` (opcional): `activo` | `espacio`
     *   `estado` (opcional): `DISPONIBLE` | `EN_USO` | `EN_MANTENIMIENTO`
-    *   `facultad` (opcional): ID o nombre de la facultad
+    *   `facultad` (opcional): **UUID** de la facultad o su nombre
     *   `page` (opcional, por defecto `0`)
     *   `size` (opcional, por defecto `20`)
 
@@ -84,7 +87,7 @@ Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageab
     {
       "content": [
         {
-          "id": "uuid-recurso-123",
+          "id": "550e8400-e29b-41d4-a716-446655440000",
           "codigo": "ACT-FI-001",
           "nombre": "Videoabinador Epson Pro",
           "tipo": "ACTIVO",
@@ -104,17 +107,17 @@ Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageab
 *   **Respuesta Exitosa (`200 OK`):** Retorna el listado paginado de recursos que cumplen con los filtros aplicados, junto con los metadatos de paginación (`page`, `size`, `totalElements`).
 
 #### 2. Detalle completo de un recurso
-*   **Método y Ruta:** `GET /api/v1/recursos/{id}`
+*   **Método y Ruta:** `GET /api/v1/recursos/{id:uuid}`
 *   **Propósito:** Obtener la información maestra, metadatos y atributos específicos de un activo o espacio mediante su identificador único.
-*   **Path Parameters:** `id` (UUID del recurso).
+*   **Path Parameters:** `id` (**UUID v4** canónico del recurso; un valor no-UUID retorna `400 Bad Request`).
 
 #### 3. Consultar disponibilidad actual (US0)
-*   **Método y Ruta:** `GET /api/v1/recursos/{id}/disponibilidad`
+*   **Método y Ruta:** `GET /api/v1/recursos/{id:uuid}/disponibilidad`
 *   **Propósito:** Consultar en tiempo real si un recurso se encuentra disponible o el motivo específico de su inhabilitación (consultado frecuentemente por M2).
 *   **Payload Request Body:**
     ```json
     {
-      "id": "uuid-recurso-123",
+      "id": "550e8400-e29b-41d4-a716-446655440000",
       "disponible": true,
       "estadoActual": "DISPONIBLE",
       "horarioOcupacion": null,
@@ -134,13 +137,15 @@ Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageab
     ```json
     {
       "nombre": "Microscopio Óptico Binocular",
-      "serial": "MIC-998877",
-      "facultad": "Ciencias Básicas",
+      "codigo": "MIC-998877",
+      "facultadId": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
       "estadoFisico": "NUEVO",
-      "ubicacion": "uuid-espacio-456"
+      "ubicacionId": "b1f0d2c3-4e5a-6b7c-8d9e-0f1a2b3c4d5e"
     }
     ```
-*   **Respuesta Exitosa (`201 Created`):** Retorna el recurso creado con su ID generado y estado inicial automático en `DISPONIBLE`.
+*   **Respuesta Exitosa (`201 Created`):** Retorna el recurso creado con su `id` (**UUID v4** generado por el servidor) y estado inicial automático en `DISPONIBLE`. El cliente **no** envía `id`.
+
+*   **Nota de tipos:** `ubicacionId` y `facultadId` son **UUID** (FK); `codigo` es String de negocio único; el `id` del activo lo asigna el servidor.
 
 #### 5. Registrar un nuevo espacio físico
 *   **Método y Ruta:** `POST /api/v1/espacios`
@@ -151,17 +156,20 @@ Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageab
       "nombre": "Laboratorio de Redes 2",
       "edificio": "Bienestar Universitario",
       "aforoMaximo": 30,
-      "facultad": "Ingeniería"
+      "facultadId": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      "equipamiento": ["c2a1b3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d"]
     }
     ```
-*   **Respuesta Exitosa (`201 Created`):** Retorna los datos del espacio registrado.
+*   **Respuesta Exitosa (`201 Created`):** Retorna los datos del espacio registrado, incluyendo su `id` (**UUID v4** generado por el servidor). `facultadId` y cada elemento de `equipamiento` son UUIDs de entidades existentes.
+
+*   **Nota de tipos:** `facultadId` es **UUID** de la facultad (FK); `equipamiento` es un array de **UUIDs** de activos existentes. El `id` del espacio lo asigna el servidor.
 
 ---
 
 ### C. Actualización de Estados (US3)
 
 #### 6. Actualización manual del estado de un recurso
-*   **Método y Ruta:** `PATCH /api/v1/recursos/{id}/estado`
+*   **Método y Ruta:** `PATCH /api/v1/recursos/{id:uuid}/estado`
 *   **Propósito:** Permitir a la administración modificar de forma manual el estado del recurso (ej. envío a mantenimiento), generando automáticamente un registro de auditoría.
 *   **Payload Request Body:**
     ```json
@@ -171,7 +179,7 @@ Page<Recurso> findByTipoAndEstado(TipoRecurso tipo, EstadoRecurso estado, Pageab
       "usuarioResponsable": "admin.infraestructura"
     }
     ```
-*   **Respuesta Exitosa (`200 OK`):** Devuelve el recurso actualizado con su respectiva traza de auditoría.
+*   **Respuesta Exitosa (`200 OK`):** Devuelve el recurso actualizado (con su `id` **UUID v4** en el body) y su respectiva traza de auditoría. `usuarioResponsable` es el correo/rol del usuario humano, **no** un UUID.
 
 ---
 
@@ -230,8 +238,8 @@ Body Errors:
   "timestamp": "2026-10-05T14:32:10Z",
   "status": 404,
   "error": "Not Found",
-  "message": "No se encontró un recurso con el id 'uuid-recurso-999'.",
-  "path": "/api/v1/recursos/uuid-recurso-999"
+  "message": "No se encontró un recurso con el id '99999999-9999-4999-9999-999999999999'.",
+  "path": "/api/v1/recursos/99999999-9999-4999-9999-999999999999"
 }
 ```
  
@@ -242,7 +250,7 @@ Body Errors:
   "status": 500,
   "error": "Internal Server Error",
   "message": "Ocurrió un error inesperado al procesar la solicitud. Contacte al administrador del sistema.",
-  "path": "/api/v1/recursos/uuid-recurso-123/estado"
+  "path": "/api/v1/recursos/550e8400-e29b-41d4-a716-446655440000/estado"
 }
 ```
 
