@@ -50,31 +50,31 @@ gestion-de-activos---modulo-1/backend/
 │   │
 │   ├── application/                    # CAPA 2: Casos de uso
 │   │   └── useCases/
-│   │       ├── consultaDisponibilidad  # HU-0: Consulta por ID o categoria
-│   │       ├── creacionRecurso
-│   │       ├── actualizacionRecurso
-│   │       ├── generarReporte
-│   │       └── consultaInventarios
+│   │       ├── ConsultaDisponibilidad  # HU-0: Consulta por ID o categoria
+│   │       ├── CreacionRecurso
+│   │       ├── ActualizacionRecurso
+│   │       ├── GenerarReporte
+│   │       └── ConsultaInventarios
 │   │
 │   └── infrastructure/                 # CAPA 3: Adaptadores y detalles externos (incluye la antigua "presentation": controladores y API son Infraestructura en Clean Architecture)
 │       ├── database/                   # Configuracion de BD y modelos ORM
-│       │   ├── connection
-│       │   └── models                  # Tablas en BD (SQLAlchemy, Mongo, etc.)
+│       │   ├── Connection
+│       │   └── Models                  # Tablas en BD (SQLAlchemy, Mongo, etc.)
 │       ├── repositories/               # Implementaciones reales de los contratos
-│       │   └── postgresRecursoRepo     # Implementa RecursoRepository
+│       │   └── PostgresRecursoRepo     # Implementa RecursoRepository
 │       ├── external/                   # Comunicacion con otros servicios
-│       │   ├── modulo2Client           # Cliente para interactuar con Modulo 2
-│       │   └── modulo3Client           # Cliente para interactuar con Modulo 3
+│       │   ├── Modulo2Client           # Cliente para interactuar con Modulo 2
+│       │   └── Modulo3Client           # Cliente para interactuar con Modulo 3
 │       └── api/                        # Rutas / Endpoints REST y controladores
 │           ├── v1/
-│           │   └── recursosController
+│           │   └── RecursosController
 │           ├── dtos/                   # Estructuras de entrada/salida de los endpoints (antes mal ubicadas en application)
-│           │   ├── consultaRequestDto
-│           │   └── disponibilidadResponseDto
+│           │   ├── ConsultaRequestDto
+│           │   └── DisponibilidadResponseDto
 │           ├── schemas/                # Validacion de payloads (Pydantic / Joi)
-│           │   └── recursoSchemas
+│           │   └── RecursoSchemas
 │           └── middlewares/            # Manejadores globales de errores, CORS, auth
-│               └── errorHandler
+│               └── ErrorHandler
 │
 ├── tests/                              # Pruebas automatizadas
 │   ├── unit/                           # Pruebas a Casos de Uso y Entidades (rapidas, sin BD)
@@ -132,11 +132,11 @@ Las dependencias en el codigo SOLO pueden apuntar hacia adentro:
    - **Principios de Diseño:** Stateless, cliente-servidor, cacheable, interfaz uniforme y versionado `/api/v1/`.
    - **Rol del Módulo 1:** Servidor principal de inventario (autoridad de activos, espacios y estados) y cliente ocasional para validaciones cruzadas.
    - GET  /api/v1/recursos                  -> Listado paginado con filtros (tipo, estado, facultad).
-   - GET  /api/v1/recursos/{id}             -> Detalle completo del activo o espacio.
-   - GET  /api/v1/recursos/{id}/disponibilidad -> Estado de disponibilidad actual.
+   - GET  /api/v1/recursos/{id:uuid}             -> Detalle completo del activo o espacio.
+   - GET  /api/v1/recursos/{id:uuid}/disponibilidad -> Estado de disponibilidad actual.
    - POST /api/v1/activos                   -> Registro de nuevo activo físico.
    - POST /api/v1/espacios                  -> Registro de nuevo espacio físico.
-   - PATCH /api/v1/recursos/{id}/estado     -> Actualización manual de estado (con registro de auditoría).
+   - PATCH /api/v1/recursos/{id:uuid}/estado     -> Actualización manual de estado (con registro de auditoría).
 
 **C. ESTRATEGIA DE TESTING Y COBERTURA**
    - Definir cobertura mínima (>80% en Application y Domain).
@@ -153,7 +153,8 @@ Para que el **Módulo 1 (M1)** permita la conexión y consumo por parte de los d
 * **Formato de intercambio:** `application/json` (tanto para peticiones como para respuestas).
 * **Autenticación / Autorización:** Mediante cabeceras de seguridad (ej. tokens JWT o API Keys internas entre servicios).
 * **Manejo de Errores:** Respuestas estándar HTTP con códigos de estado claros (`200`, `201`, `400`, `404`, `500`) acompañados de un JSON descriptivo del error.
-* **Nota de identificadores:** `id_activo` / `id_espacio` son enteros autoincrementales a nivel de base de datos (`diagrama-b-d-script.postgresql`); la API los expone como `id` (string) para no acoplar el contrato público al tipo de dato interno.
+* **Nota de identificadores:** `id_activo` / `id_espacio` son claves primarias **UUID v4** generadas por la base de datos (`gen_random_uuid()` en PostgreSQL); la API las expone como `id` en formato UUID canónico (`8-4-4-4-12`, minúsculas con guiones). El código de negocio (placa de inventario para activos, código para espacios) se expone en el campo separado `codigo` (String). No se usan enteros autoincrementales en ninguna capa.
+* **Validación de path params:** todos los `{id}` de rutas REST se validan contra el patrón UUID canónico; un valor no-UUID retorna `400 Bad Request` antes de tocar la base de datos.
 ### 2. Definición Detallada de Endpoints
  
 #### A. Catálogo y Consultas Generales (M1 como servidor)
@@ -166,7 +167,7 @@ Permite filtrar el inventario según tipo, estado actual o facultad para proceso
 * **Parámetros de consulta (Query Params):**
   * `tipo` (opcional): `activo` | `espacio`
   * `estado` (opcional): `DISPONIBLE` | `EN_USO` | `EN_MANTENIMIENTO`
-  * `facultad` (opcional): ID o nombre de la facultad.
+  * `facultad` (opcional): **UUID** de la facultad o su nombre.
   * `page` (opcional, por defecto `0`)
   * `size` (opcional, por defecto `20`)
 * **Respuesta Exitosa (`200 OK`):**
@@ -174,7 +175,7 @@ Permite filtrar el inventario según tipo, estado actual o facultad para proceso
   {
     "content": [
       {
-        "id": "uuid-recurso-123",
+        "id": "550e8400-e29b-41d4-a716-446655440000",
         "codigo": "ACT-FI-001",
         "nombre": "Videobeam Epson Pro",
         "tipo": "ACTIVO",
@@ -189,13 +190,13 @@ Permite filtrar el inventario según tipo, estado actual o facultad para proceso
 ```
 * **Errores:** `400` (parámetro `estado`/`tipo` inválido), `401`/`403` (sin autorización).
 **2. Detalle completo de un recurso**
-* **Método y Ruta:** `GET /api/v1/recursos/{id}`
+* **Método y Ruta:** `GET /api/v1/recursos/{id:uuid}`
 * **Origen:** Dirección Universitaria, Monitor de Recursos
 * **Nota:** Mismo criterio que el punto 1 — el detalle completo (ubicación, facultad, plazo de devolución, etc.) es información de catálogo, no de disponibilidad operativa; queda fuera del alcance de M2/M3.
 * **Respuesta Exitosa (`200 OK`):**
 ```json
   {
-    "id": "uuid-recurso-123",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "codigo": "ACT-FI-001",
     "nombre": "Videobeam Epson Pro",
     "tipo": "ACTIVO",
@@ -209,12 +210,12 @@ Permite filtrar el inventario según tipo, estado actual o facultad para proceso
 * **Errores:** `404` (recurso no encontrado o dado de baja).
 **3. Estado de disponibilidad actual**
 Corresponde al caso de uso "Consultar disponibilidad de los Recursos", consumido de forma síncrona por M2 y M3 antes de resolver una reserva o registrar una novedad.
-* **Método y Ruta:** `GET /api/v1/recursos/{id}/disponibilidad`
+* **Método y Ruta:** `GET /api/v1/recursos/{id:uuid}/disponibilidad`
 * **Origen → Destino:** M2 → M1, M3 → M1
 * **Respuesta Exitosa (`200 OK`):**
 ```json
   {
-    "id": "uuid-recurso-123",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "estado": "EN_USO",
     "horarioAsignado": {
       "inicio": "2026-09-26T14:00:00-05:00",
@@ -234,11 +235,12 @@ Corresponde al caso de uso "Consultar disponibilidad de los Recursos", consumido
     "nombre": "Microscopio Óptico #5",
     "tipo": "MICROSCOPIO",
     "estadoFisico": "NUEVO",
-    "ubicacionId": "uuid-espacio-45"
+    "ubicacionId": "b1f0d2c3-4e5a-6b7c-8d9e-0f1a2b3c4d5e"
   }
 ```
 * **Respuesta Exitosa (`201 Created`):** Recurso creado con `estado: "DISPONIBLE"` asignado automáticamente.
-* **Errores:** `400` (campos obligatorios faltantes o inválidos), `409` (identificador/placa duplicada).
+* **Errores:** `400` (campos obligatorios faltantes o inválidos), `409` (`codigo`/placa de inventario duplicada). El `id` UUID lo genera el servidor y no puede colisionar.
+* **Nota de tipos:** `ubicacionId` es **UUID** del espacio (FK). El `id` del nuevo activo lo asigna el servidor (UUID v4) y se devuelve en el `201 Created`; el cliente no lo envía. El `codigo` (placa de inventario) es un String separado y único.
 **5. Registro de un nuevo espacio**
 * **Método y Ruta:** `POST /api/v1/espacios`
 * **Origen:** Dirección Universitaria
@@ -247,17 +249,18 @@ Corresponde al caso de uso "Consultar disponibilidad de los Recursos", consumido
   {
     "nombre": "Laboratorio de Telecomunicaciones",
     "aforoMaximo": 30,
-    "equipamiento": ["uuid-activo-10", "uuid-activo-11"],
-    "facultadId": "uuid-facultad-02"
+    "equipamiento": ["c2a1b3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "d3b2c4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"],
+    "facultadId": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
   }
 ```
 * **Respuesta Exitosa (`201 Created`):** Espacio creado con `estado: "DISPONIBLE"` asignado automáticamente.
-* **Errores:** `400` (aforo inválido, campos faltantes), `409` (ID duplicado), `422` (facultad/equipamiento inexistente — integridad referencial).
+* **Errores:** `400` (aforo inválido, campos faltantes), `409` (`codigo` de espacio duplicado), `422` (`facultadId`/`equipamiento` inexistente o con formato UUID inválido — integridad referencial).
+* **Nota de tipos:** `facultadId` es **UUID** de la facultad (FK); `equipamiento` es un array de **UUIDs** de activos existentes. El `id` del espacio lo asigna el servidor (UUID v4).
 #### C. Actualización de Estado (M1 como servidor)
  
 **6. Actualización manual de estado**
 Usado por Dirección Universitaria / Monitor de Recursos para cambios manuales fuera del flujo de eventos de Pila/Cola; dispara el evento `estado.actualizado` (ver contrato asíncrono) hacia M2 y M3.
-* **Método y Ruta:** `PATCH /api/v1/recursos/{id}/estado`
+* **Método y Ruta:** `PATCH /api/v1/recursos/{id:uuid}/estado`
 * **Origen:** Dirección Universitaria, Monitor de Recursos
 * **Relación con `SPEC-HISTORIA3.md` (FR-001):** esa spec autoriza también a Módulo 2 y Módulo 3 a "actualizar el estado de un recurso", pero no define el canal técnico. Este `PATCH` **no** es ese canal para M2/M3: es la vía síncrona de actualización manual, reservada a los roles humanos (Dirección Universitaria, Monitor), sin garantía ACID entre módulos (`REST.md` §1). M2 y M3 cumplen FR-001 a través de los eventos asíncronos ya definidos en el contrato Pila/Cola — `notificar-uso` (M2→M1) y `reserva-finalizada` / `reporte-de-daños` (M3→M1) — que sí ofrecen la garantía ACID e idempotencia que `PILA.md` exige para eventos críticos de estado. Ambos flujos conviven sin contradicción: mismo resultado (transición de estado auditada), canal distinto según el tipo de actor.
 * **Cuerpo de la petición:**
@@ -270,7 +273,7 @@ Usado por Dirección Universitaria / Monitor de Recursos para cambios manuales f
 * **Respuesta Exitosa (`200 OK`):**
 ```json
   {
-    "id": "uuid-recurso-123",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "estadoAnterior": "DISPONIBLE",
     "estadoNuevo": "EN_MANTENIMIENTO",
     "auditoria": {
@@ -285,19 +288,19 @@ Usado por Dirección Universitaria / Monitor de Recursos para cambios manuales f
 Llamadas síncronas, de solo lectura y con timeout corto, que M1 realiza antes de autorizar una transición crítica de estado (p. ej. liberar o poner en mantenimiento un recurso).
  
 **7. Consulta de reservas activas (M1 → M2)**
-* **Método y Ruta:** `GET {m2-base-url}/api/v1/reservas/activas?recursoId={id}`
+* **Método y Ruta:** `GET {m2-base-url}/api/v1/reservas/activas?recursoId={uuid}`
 * **Propósito:** Confirmar que el recurso no tenga una reserva vigente antes de liberarlo.
 * **Respuesta esperada:**
 ```json
-  { "recursoId": "uuid-recurso-123", "tieneReservaActiva": false }
+  { "recursoId": "550e8400-e29b-41d4-a716-446655440000", "tieneReservaActiva": false }
 ```
  
 **8. Consulta de novedades técnicas pendientes (M1 → M3)**
-* **Método y Ruta:** `GET {m3-base-url}/api/v1/novedades/pendientes?recursoId={id}`
+* **Método y Ruta:** `GET {m3-base-url}/api/v1/novedades/pendientes?recursoId={uuid}`
 * **Propósito:** Confirmar que no existan novedades técnicas sin resolver antes de una transición crítica.
 * **Respuesta esperada:**
 ```json
-  { "recursoId": "uuid-recurso-123", "tieneNovedadPendiente": false }
+  { "recursoId": "550e8400-e29b-41d4-a716-446655440000", "tieneNovedadPendiente": false }
 ```
 * **Errores comunes a D:** `504`/timeout (se trata como fallo de validación; M1 no ejecuta la transición y responde `409` al llamador original).
   
@@ -321,6 +324,7 @@ Llamadas síncronas, de solo lectura y con timeout corto, que M1 realiza antes d
 Examples of foundational tasks (adjust based on your project):
 
 - [ ] T004 Setup database schema and migrations framework
+- [ ] T004b Configurar PKs y FKs como `UUID DEFAULT gen_random_uuid()` en todas las tablas (`Activo`, `Espacio`, `Facultad`, `Ubicacion`, `TipoActivo`, `HistorialRecurso`, `EventosProcesados`); habilitar extensión `pgcrypto` en PostgreSQL. Eliminar cualquier `SERIAL`/`BIGINT` del esquema base.
 - [ ] T005 Implement authentication/authorization framework
 - [ ] T006 Setup API routing and middleware structure
 - [ ] T007 Create base models/entities that all stories depend on
