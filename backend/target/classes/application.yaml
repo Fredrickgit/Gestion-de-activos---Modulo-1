@@ -25,6 +25,13 @@ spring:
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:m1-activos-consumer-group}
       auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-serializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual_immediate
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -32,3 +39,13 @@ spring:
     user:
       name: ${SECURITY_USER:admin}
       password: ${SECURITY_PASSWORD:admin}
+
+external:
+  modulo2:
+    base-url: ${MODULO2_BASE_URL:http://localhost:8082}
+    connect-timeout-ms: ${MODULO2_CONNECT_TIMEOUT:2000}
+    read-timeout-ms: ${MODULO2_READ_TIMEOUT:3000}
+  modulo3:
+    base-url: ${MODULO3_BASE_URL:http://localhost:8083}
+    connect-timeout-ms: ${MODULO3_CONNECT_TIMEOUT:2000}
+    read-timeout-ms: ${MODULO3_READ_TIMEOUT:3000}

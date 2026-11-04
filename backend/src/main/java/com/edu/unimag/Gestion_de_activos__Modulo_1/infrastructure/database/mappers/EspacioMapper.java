@@ -1,46 +1,46 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers;
 
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.EspacioEntity;
 import org.springframework.stereotype.Component;
 
-/**
- * Traduce entre la entidad JPA {@link EspacioEntity} y la entidad de dominio
- * {@link Espacio}. No contiene reglas de negocio: solo correspondencia de
- * campos.
- */
+import java.util.ArrayList;
+
 @Component
 public class EspacioMapper {
 
-    public Espacio toDomain(EspacioEntity entity) {
-        if (entity == null) {
+    public com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio toDomain(
+            com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio model) {
+        if (model == null) {
             return null;
         }
 
-        return Espacio.builder()
-                .id(entity.getId())
-                .nombre(entity.getNombre())
-                .aforo(entity.getAforoMaximo() != null ? entity.getAforoMaximo() : 0)
-                .categoria(entity.getCategoria())
-                .facultadId(entity.getFacultadId())
-                .disponibilidadId(entity.getDisponibilidadId())
-                .ubicacionId(entity.getUbicacionId())
+        return com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio.builder()
+                .id(model.getId())
+                .nombre(model.getNombre())
+                .aforo(model.getAforoMaximo() != null ? model.getAforoMaximo() : 0)
+                .categoria(model.getCategoria())
+                .plazoDevolucion(model.getPlazoDevolucion())
+                .facultadId(model.getFacultadId())
+                .disponibilidadId(model.getDisponibilidadId())
+                .ubicacionId(model.getUbicacionId())
                 .build();
     }
 
-    public EspacioEntity toEntity(Espacio domain) {
+    public com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio toModel(
+            com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio domain) {
         if (domain == null) {
             return null;
         }
 
-        EspacioEntity entity = new EspacioEntity();
-        entity.setId(domain.getId());
-        entity.setNombre(domain.getNombre());
-        entity.setAforoMaximo(domain.getAforo());
-        entity.setCategoria(domain.getCategoria());
-        entity.setFacultadId(domain.getFacultadId());
-        entity.setDisponibilidadId(domain.getDisponibilidadId());
-        entity.setUbicacionId(domain.getUbicacionId());
-        return entity;
+        return com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio.builder()
+                .id(domain.getId())
+                .nombre(domain.getNombre())
+                .aforoMaximo(domain.getAforo())
+                .categoria(domain.getCategoria())
+                .plazoDevolucion(domain.getPlazoDevolucion())
+                .facultadId(domain.getFacultadId())
+                .disponibilidadId(domain.getDisponibilidadId())
+                .ubicacionId(domain.getUbicacionId())
+                .equipamiento(new ArrayList<>())
+                .build();
     }
 }

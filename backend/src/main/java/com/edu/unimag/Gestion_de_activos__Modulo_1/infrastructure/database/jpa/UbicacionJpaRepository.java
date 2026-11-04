@@ -1,6 +1,6 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa;
 
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.UbicacionEntity;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Ubicacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,13 +8,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repositorio Spring Data para la tabla {@code ubicacion}.
+ * Repositorio Spring Data JPA para la tabla {@code ubicacion}.
  */
 @Repository
-public interface UbicacionJpaRepository extends JpaRepository<UbicacionEntity, UUID> {
+public interface UbicacionJpaRepository extends JpaRepository<Ubicacion, UUID> {
 
-    Optional<UbicacionEntity> findByNombre(String nombre);
+    Optional<Ubicacion> findByNombre(String nombre);
 
     boolean existsByNombre(String nombre);
 }
-

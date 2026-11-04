@@ -42,30 +42,30 @@ CREATE TABLE estado_disponibilidad (
 );
 
 -- ---------------------------------------------------------------------------
--- Recurso (padre) y sus especializaciones Activo / Espacio
+-- Espacio y Activo (entidades independientes)
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE recurso (
+CREATE TABLE espacio (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre VARCHAR(255) NOT NULL,
-    categoria VARCHAR(20) NOT NULL CHECK (categoria IN ('ACTIVO', 'ESPACIO')),
-    disponibilidad_id UUID NOT NULL REFERENCES estado_disponibilidad (id),
-    plazo_devolucion_dias INTEGER NOT NULL DEFAULT 0 CHECK (plazo_devolucion_dias >= 0)
-);
-
-CREATE TABLE espacio (
-    id UUID PRIMARY KEY REFERENCES recurso (id) ON DELETE CASCADE,
+    categoria VARCHAR(20) NOT NULL DEFAULT 'ESPACIO' CHECK (categoria = 'ESPACIO'),
     aforo_maximo INTEGER NOT NULL CHECK (aforo_maximo > 0),
+    plazo_devolucion INTEGER NOT NULL DEFAULT 0 CHECK (plazo_devolucion >= 0),
     equipamiento JSONB NOT NULL DEFAULT '[]'::jsonb,
     facultad_id UUID NOT NULL REFERENCES facultad (id),
-    ubicacion_id UUID NOT NULL REFERENCES ubicacion (id)
+    ubicacion_id UUID NOT NULL REFERENCES ubicacion (id),
+    disponibilidad_id UUID NOT NULL REFERENCES estado_disponibilidad (id)
 );
 
 CREATE TABLE activo (
-    id UUID PRIMARY KEY REFERENCES recurso (id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(255) NOT NULL,
     codigo VARCHAR(100) NOT NULL UNIQUE,
+    categoria VARCHAR(20) NOT NULL DEFAULT 'ACTIVO' CHECK (categoria = 'ACTIVO'),
+    plazo_devolucion INTEGER NOT NULL DEFAULT 0 CHECK (plazo_devolucion >= 0),
     estado_fisico_id UUID NOT NULL REFERENCES estado_activo (id),
-    espacio_id UUID NOT NULL REFERENCES espacio (id)
+    disponibilidad_id UUID NOT NULL REFERENCES estado_disponibilidad (id),
+    espacio_id UUID REFERENCES espacio (id)
 );
 
 -- ---------------------------------------------------------------------------
@@ -95,10 +95,10 @@ CREATE TABLE eventos_procesados (
 -- Indices de apoyo para consultas de catalogo y trazabilidad
 -- ---------------------------------------------------------------------------
 
-CREATE INDEX idx_recurso_disponibilidad ON recurso (disponibilidad_id);
-CREATE INDEX idx_recurso_categoria ON recurso (categoria);
+CREATE INDEX idx_espacio_disponibilidad ON espacio (disponibilidad_id);
 CREATE INDEX idx_espacio_facultad ON espacio (facultad_id);
 CREATE INDEX idx_espacio_ubicacion ON espacio (ubicacion_id);
+CREATE INDEX idx_activo_disponibilidad ON activo (disponibilidad_id);
 CREATE INDEX idx_activo_estado_fisico ON activo (estado_fisico_id);
 CREATE INDEX idx_activo_espacio ON activo (espacio_id);
 CREATE INDEX idx_historial_recurso ON historial_recurso (id_recurso);
