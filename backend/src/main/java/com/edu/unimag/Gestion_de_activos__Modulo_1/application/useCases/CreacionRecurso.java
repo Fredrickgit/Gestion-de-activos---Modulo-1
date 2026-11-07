@@ -10,51 +10,36 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class RecursoService {
+public class CreacionRecurso {
 
     private final ActivoRepository activoRepository;
     private final EspacioRepository espacioRepository;
 
-    public RecursoService(ActivoRepository activoRepository, EspacioRepository espacioRepository) {
+    public CreacionRecurso(ActivoRepository activoRepository, EspacioRepository espacioRepository) {
         this.activoRepository = activoRepository;
         this.espacioRepository = espacioRepository;
     }
 
+    // SPEC 1: Creación de activo validando identificador único[cite: 11]
     @Transactional
-    public Activo crearActivo(Activo activo, UUID disponibilidadDisponibleId) {
+    public Activo crearActivo(Activo activo, UUID estadoDisponibleId) {
         if (activoRepository.existsById(activo.getId())) {
-            throw new IllegalArgumentException("El identificador del activo ya se encuentra registrado");
+            throw new IllegalArgumentException("El identificador ya se encuentra registrado"); // Bloqueo por ID duplicado[cite: 11]
         }
-        // Asignación de estado inicial 'Disponible' mediante el ID referenciado
-        activo.setDisponibilidadId(disponibilidadDisponibleId);
-        return activoRepository.save(activo); // Persistencia transaccional
+        activo.setDisponibilidadId(estadoDisponibleId); // Asignación automática de estado inicial[cite: 11]
+        return activoRepository.save(activo);
     }
 
-    // SPEC 1: Creación de un espacio
+    // SPEC 1: Creación de espacio validando aforo y unicidad[cite: 11]
     @Transactional
-    public Espacio crearEspacio(Espacio espacio, UUID disponibilidadDisponibleId) {
+    public Espacio crearEspacio(Espacio espacio, UUID estadoDisponibleId) {
         if (espacioRepository.existsById(espacio.getId())) {
-            throw new IllegalArgumentException("El identificador del espacio ya se encuentra registrado"); 
+            throw new IllegalArgumentException("El identificador ya se encuentra registrado");[cite: 11]
         }
         if (espacio.getAforo() <= 0) {
-            throw new IllegalArgumentException("El aforo máximo debe ser un número entero positivo mayor a cero"); 
+            throw new IllegalArgumentException("El aforo máximo debe ser un número entero positivo mayor a cero");[cite: 11]
         }
-        espacio.setDisponibilidadId(disponibilidadDisponibleId);
+        espacio.setDisponibilidadId(estadoDisponibleId);[cite: 11]
         return espacioRepository.save(espacio);
-    }
-
-    // SPEC 3: Actualizar el estado del recurso
-    @Transactional
-    public Activo actualizarEstadoActivo(UUID activoId, UUID nuevaDisponibilidadId) {
-        Activo activo = activoRepository.findById(activoId)
-                .orElseThrow(() -> new IllegalArgumentException("Recurso no encontrado"));
-        
-        if (activo.getDisponibilidadId().equals(nuevaDisponibilidadId)) {
-            throw new IllegalArgumentException("El recurso ya se encuentra en el estado seleccionado."); 
-        }
-        
-        // Aquí se invocaría el servicio de auditoría (externo a las entidades dadas) para registrar el cambio.
-        activo.setDisponibilidadId(nuevaDisponibilidadId);
-        return activoRepository.save(activo);
     }
 }
