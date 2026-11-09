@@ -2,12 +2,14 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.domain.entities;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.EstadoDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.AvailabilityRequiredException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EstadoDisponibilidadEntityTest {
 
@@ -28,16 +30,6 @@ class EstadoDisponibilidadEntityTest {
     }
 
     @Test
-    @DisplayName("El constructor sin argumentos inicializa valores por defecto")
-    void constructorSinArgumentos_inicializaValoresPorDefecto() {
-        EstadoDisponibilidad estadoDisponibilidad = new EstadoDisponibilidad();
-
-        assertThat(estadoDisponibilidad.getId()).isNull();
-        assertThat(estadoDisponibilidad.getDisponibilidadRecurso()).isNull();
-        assertThat(estadoDisponibilidad.getDescripcion()).isNull();
-    }
-
-    @Test
     @DisplayName("El constructor con todos los argumentos asigna todos los campos")
     void constructorConTodosLosArgumentos_asignaTodosLosCampos() {
         EstadoDisponibilidad estadoDisponibilidad = new EstadoDisponibilidad(
@@ -49,16 +41,19 @@ class EstadoDisponibilidadEntityTest {
     }
 
     @Test
-    @DisplayName("Los setters actualizan todos los campos")
-    void setters_actualizanTodosLosCampos() {
-        EstadoDisponibilidad estadoDisponibilidad = new EstadoDisponibilidad();
+    @DisplayName("El constructor permite una descripcion nula")
+    void constructor_permiteDescripcionNula() {
+        EstadoDisponibilidad estadoDisponibilidad = new EstadoDisponibilidad(
+                ID, EstadoDisponibilidadRecurso.DISPONIBLE, null);
 
-        estadoDisponibilidad.setId(ID);
-        estadoDisponibilidad.setDisponibilidadRecurso(EstadoDisponibilidadRecurso.DISPONIBLE);
-        estadoDisponibilidad.setDescripcion("Disponible para préstamo");
+        assertThat(estadoDisponibilidad.getDescripcion()).isNull();
+    }
 
-        assertThat(estadoDisponibilidad.getId()).isEqualTo(ID);
-        assertThat(estadoDisponibilidad.getDisponibilidadRecurso()).isEqualTo(EstadoDisponibilidadRecurso.DISPONIBLE);
-        assertThat(estadoDisponibilidad.getDescripcion()).isEqualTo("Disponible para préstamo");
+    @Test
+    @DisplayName("Rechaza la disponibilidad del recurso nula")
+    void constructor_rechazaDisponibilidadRecursoNula() {
+        assertThatThrownBy(() -> new EstadoDisponibilidad(ID, null, "Sin estado"))
+                .isInstanceOf(AvailabilityRequiredException.class)
+                .hasMessage("La disponibilidad del recurso es obligatoria");
     }
 }

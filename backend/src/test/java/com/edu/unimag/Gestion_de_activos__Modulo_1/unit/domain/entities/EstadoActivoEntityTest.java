@@ -2,12 +2,14 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.domain.entities;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.EstadoActivo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoFisicoActivo;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.PhysicalStateRequiredException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EstadoActivoEntityTest {
 
@@ -28,16 +30,6 @@ class EstadoActivoEntityTest {
     }
 
     @Test
-    @DisplayName("El constructor sin argumentos inicializa valores por defecto")
-    void constructorSinArgumentos_inicializaValoresPorDefecto() {
-        EstadoActivo estadoActivo = new EstadoActivo();
-
-        assertThat(estadoActivo.getId()).isNull();
-        assertThat(estadoActivo.getEstado()).isNull();
-        assertThat(estadoActivo.getDescripcion()).isNull();
-    }
-
-    @Test
     @DisplayName("El constructor con todos los argumentos asigna todos los campos")
     void constructorConTodosLosArgumentos_asignaTodosLosCampos() {
         EstadoActivo estadoActivo = new EstadoActivo(ID, EstadoFisicoActivo.NUEVO, "Recurso nuevo");
@@ -48,16 +40,18 @@ class EstadoActivoEntityTest {
     }
 
     @Test
-    @DisplayName("Los setters actualizan todos los campos")
-    void setters_actualizanTodosLosCampos() {
-        EstadoActivo estadoActivo = new EstadoActivo();
+    @DisplayName("El constructor permite una descripcion nula")
+    void constructor_permiteDescripcionNula() {
+        EstadoActivo estadoActivo = new EstadoActivo(ID, EstadoFisicoActivo.NUEVO, null);
 
-        estadoActivo.setId(ID);
-        estadoActivo.setEstado(EstadoFisicoActivo.NUEVO);
-        estadoActivo.setDescripcion("Recurso nuevo");
+        assertThat(estadoActivo.getDescripcion()).isNull();
+    }
 
-        assertThat(estadoActivo.getId()).isEqualTo(ID);
-        assertThat(estadoActivo.getEstado()).isEqualTo(EstadoFisicoActivo.NUEVO);
-        assertThat(estadoActivo.getDescripcion()).isEqualTo("Recurso nuevo");
+    @Test
+    @DisplayName("Rechaza el estado nulo")
+    void constructor_rechazaEstadoNulo() {
+        assertThatThrownBy(() -> new EstadoActivo(ID, null, "Recurso nuevo"))
+                .isInstanceOf(PhysicalStateRequiredException.class)
+                .hasMessage("El estado fisico del activo es obligatorio");
     }
 }

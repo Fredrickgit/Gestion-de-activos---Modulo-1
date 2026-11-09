@@ -1,5 +1,9 @@
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\TipoActivoEntityTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\valueobjects\CoordinatesTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\EstadoDisponibilidadEntityTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\exceptions\DomainExceptionTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\valueobjects\CodeTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\valueobjects\CapacityTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\ActivoEntityTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\EspacioEntityTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\FacultadEntityTest.class
@@ -7,4 +11,6 @@ com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\enums\EstadoFis
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\enums\EstadoDisponibilidadRecursoEnumTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\EstadoActivoEntityTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\enums\CategoriaRecursoEnumTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\valueobjects\LoanPeriodTest.class
+com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\valueobjects\NameTest.class
 com\edu\unimag\Gestion_de_activos__Modulo_1\unit\domain\entities\UbicacionUniversitariaEntityTest.class

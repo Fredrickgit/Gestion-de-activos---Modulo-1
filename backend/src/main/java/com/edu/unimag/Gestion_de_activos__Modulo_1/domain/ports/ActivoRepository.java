@@ -33,7 +33,11 @@ public interface ActivoRepository {
 
     List<Activo> findByEstadoFisicoId(UUID estadoFisicoId);
 
+    List<Activo> findByTipoActivoId(UUID tipoActivoId);
+
     boolean existsByEspacioId(UUID espacioId);
+
+    boolean existsByTipoActivoId(UUID tipoActivoId);
 
     boolean existsByCodigo(String codigo);
 }

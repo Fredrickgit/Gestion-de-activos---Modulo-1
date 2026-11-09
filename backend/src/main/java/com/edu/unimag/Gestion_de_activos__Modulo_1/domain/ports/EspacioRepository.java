@@ -33,9 +33,13 @@ public interface EspacioRepository {
 
     List<Espacio> findByAforoGreaterThanEqual(int aforoMinimo);
 
+    Optional<Espacio> findByCodigo(String codigo);
+
     boolean existsByFacultadId(UUID facultadId);
 
     boolean existsByUbicacionId(UUID ubicacionId);
 
     boolean existsByNombre(String nombre);
+
+    boolean existsByCodigo(String codigo);
 }
