@@ -1,0 +1,83 @@
+package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
+
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.ActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.EspacioRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.services.ConsultaDisponibilidad;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ConsultaDisponibilidadTest {
+
+    @Mock
+    private ActivoRepository activoRepository;
+    @Mock
+    private EspacioRepository espacioRepository;
+
+    @InjectMocks
+    private ConsultaDisponibilidad consultaDisponibilidad;
+
+    @Test
+    @DisplayName("Retornar ID de disponibilidad cuando el activo existe")
+    void consultarDisponibilidadActivoExitoso() {
+        UUID activoId = UUID.randomUUID();
+        UUID disponibilidadId = UUID.randomUUID();
+        Activo activo = Activo.builder().id(activoId).disponibilidadId(disponibilidadId).build();
+
+        when(activoRepository.findById(activoId)).thenReturn(Optional.of(activo));
+
+        UUID resultado = consultaDisponibilidad.consultarDisponibilidadActivo(activoId);
+
+        assertEquals(disponibilidadId, resultado);
+    }
+
+    @Test
+    @DisplayName("Lanzar excepción cuando el recurso no existe")
+    void consultarDisponibilidadActivoNoEncontrado() {
+        UUID activoId = UUID.randomUUID();
+        when(activoRepository.findById(activoId)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> consultaDisponibilidad.consultarDisponibilidadActivo(activoId));
+
+        assertEquals("Recurso no encontrado", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Consultar disponibilidad paginada por categoría")
+    void consultarDisponibilidadActivosPorCategoriaExitoso() {
+        Activo a1 = Activo.builder().id(UUID.randomUUID()).categoria(CategoriaRecurso.ACTIVO).build();
+        when(activoRepository.findByCategoria(CategoriaRecurso.ACTIVO)).thenReturn(List.of(a1));
+
+        Page<Activo> pagina = consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0);
+
+        assertNotNull(pagina);
+        assertEquals(1, pagina.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Lanzar excepción si no hay recursos en la categoría")
+    void consultarDisponibilidadCategoriaSinResultados() {
+        when(activoRepository.findByCategoria(CategoriaRecurso.ACTIVO)).thenReturn(Collections.emptyList());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0));
+
+        assertEquals("No se encontraron activos para la categoría especificada", ex.getMessage());
+    }
+}
