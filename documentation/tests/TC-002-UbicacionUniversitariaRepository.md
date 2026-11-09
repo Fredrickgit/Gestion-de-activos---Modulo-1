@@ -1,10 +1,12 @@
 ### Test Case Specification: UbicacionUniversitariaRepository - Persistencia y consultas
-**Created** : 2026-10-29  **Spec/Plan Link** : [PLAN.md](../PLAN.md)  **Status** : Draft
+**Created** : 2026-10-29  **Spec/Plan Link** : [PLAN.md](../../specs/PLAN.md)  **Status** : Draft
 
 #### Test Overview  *(mandatory)*
 
 **Test Case ID** : TC-002-UbicacionUniversitariaRepository
 **Product Name & Version** : Módulo 1 - Gestión de Activos y Espacios (UNIMAG) v1.0.0
+**Author** : Equipo de Desarrollo - Módulo 1
+**Current Owner** : QA Lead - Módulo 1
 **Priority** : P2 - High
 
 --------------------------------------------------------------------------------
@@ -17,13 +19,13 @@ Este caso de prueba verifica que el repositorio de ubicaciones persiste, consult
 ##### Document References
 | Reference Name | Type of Reference | Document Location / Link |
 | ------ | ------ | ------ |
-| Modulo 1 Spec | Specification Document | Modulos-gestion-de-activos.md |
-| SPEC-HISTORIA1 | Specification Document | specs/SPEC-HISTORIA1.md |
-| SPEC-HISTORIA2 | Specification Document | specs/SPEC-HISTORIA2.md |
-| Implementation Plan | Plan Document | PLAN.md |
-| UbicacionUniversitariaRepository | Domain Repository Interface (Port) | src/domain/repositories/UbicacionUniversitariaRepository.java |
-| UbicacionUniversitaria | Domain Entity | src/domain/entities/UbicacionUniversitaria.java |
-| UbicacionUniversitariaRepositoryIT | Automated Test (Testcontainers) | tests/integration/repositories/UbicacionUniversitariaRepositoryIT.java |
+| Modulo 1 Spec | Specification Document | [Modulos-gestion-de-activos.md](../resources/class-resources/Modulos-gestion-de-activos.md) |
+| SPEC-HISTORIA1 | Specification Document | [SPEC-HISTORIA1.md](../../specs/SPEC-HISTORIA1.md) |
+| SPEC-HISTORIA2 | Specification Document | [SPEC-HISTORIA2.md](../../specs/SPEC-HISTORIA2.md) |
+| Implementation Plan | Plan Document | [PLAN.md](../../specs/PLAN.md) |
+| UbicacionUniversitariaRepository | Domain Repository Interface (Port) | [UbicacionUniversitariaRepository.java](../../backend/src/main/java/com/edu/unimag/Gestion_de_activos__Modulo_1/domain/Ports/UbicacionUniversitariaRepository.java) |
+| UbicacionUniversitaria | Domain Entity | [UbicacionUniversitaria.java](../../backend/src/main/java/com/edu/unimag/Gestion_de_activos__Modulo_1/domain/entities/UbicacionUniversitaria.java) |
+| UbicacionUniversitariaRepositoryIT (planificado) | Automated Test (Testcontainers) | [UbicacionUniversitariaRepositoryIT.java](../../backend/src/test/java/com/edu/unimag/Gestion_de_activos__Modulo_1/integration/repositories/UbicacionUniversitariaRepositoryIT.java) |
 
 --------------------------------------------------------------------------------
 
@@ -55,7 +57,7 @@ Este caso de prueba verifica que el repositorio de ubicaciones persiste, consult
 | 1 | Guardar entidad nueva sin id | `ubicacionRepository.save(entidad)` con `id = null` | nombre="Laboratorio de Redes", descripcion="Bloque de Ingeniería" | Retorna la entidad con `id` UUID v4 no nulo generado por la BD; la fila queda persistida | [ ] | [ ] |
 | 2 | Buscar por id existente | `ubicacionRepository.findById(id)` | id obtenido en el paso 1 | `Optional` presente con todos los campos iguales a los guardados | [ ] | [ ] |
 | 3 | Buscar por id inexistente | `ubicacionRepository.findById(UUID.randomUUID())` | UUID aleatorio | `Optional.empty()`, sin excepción | [ ] | [ ] |
-| 4 | Actualizar entidad existente | `ubicacionRepository.save(entidad)` con el `id` del paso 1 y un campo modificado | descripcion="Bloque de Ingeniería, piso 2" | Se actualiza la misma fila; no se crea una nueva (el conteo no cambia) | [ ] | [ ] |
+| 4 | Actualizar entidad existente | `ubicacionRepository.save(entidad)` con el `id` del paso 1 y un campo modificado | descripcion="Bloque de Ingeniería, piso 2" | Se actualiza la misma fila; no se crea una nueva (`findAll().size()` no cambia) | [ ] | [ ] |
 | 5 | Listar todas | `ubicacionRepository.findAll()` tras guardar una segunda entidad | nombre="Hangares" | Lista de tamaño 2 con ambas entidades | [ ] | [ ] |
 | 6 | Verificar existencia | `ubicacionRepository.existsById(id)` | id existente y UUID aleatorio | `true` para el existente, `false` para el aleatorio | [ ] | [ ] |
 | 7 | Eliminar por id | `ubicacionRepository.deleteById(id)` y luego `existsById(id)` | id del paso 1 | `existsById` retorna `false`; `findAll()` retorna 1 elemento | [ ] | [ ] |
@@ -76,7 +78,7 @@ Este caso de prueba verifica que el repositorio de ubicaciones persiste, consult
 | :---: | ------ | ------ | ------ | ------ | :---: | ------ |
 | 1 | Guardar nombre duplicado | `ubicacionRepository.save(entidad)` | nombre=Laboratorio de Redes (ya existe) | Lanza excepción de integridad (UNIQUE) | [ ] | Requiere definir UNIQUE en `nombre` |
 | 2 | Guardar nombre nulo | `ubicacionRepository.save(entidad)` | nombre=null | Lanza excepción de integridad (NOT NULL) | [ ] | [ ] |
-| 3 | Eliminar ubicación con espacios asociados | `ubicacionRepository.deleteById(id)` | Ubicación referenciada por un Recurso ESPACIO | Lanza violación de FK; la ubicación sigue existiendo | [ ] | Regla pendiente: bloquear vs. cascada |
+| 3 | Eliminar ubicación con espacios asociados | `ubicacionRepository.deleteById(id)` | Ubicación referenciada por un `Espacio` | Lanza violación de FK; la ubicación sigue existiendo | [ ] | Regla pendiente: bloquear vs. cascada |
 
 --------------------------------------------------------------------------------
 

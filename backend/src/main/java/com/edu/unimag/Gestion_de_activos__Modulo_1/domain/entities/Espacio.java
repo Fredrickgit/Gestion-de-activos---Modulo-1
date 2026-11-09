@@ -22,6 +22,4 @@ public class Espacio {
     private UUID facultadId;
     private UUID disponibilidadId;
     private UUID ubicacionId;
-
-
 }

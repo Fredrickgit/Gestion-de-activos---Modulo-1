@@ -16,11 +16,8 @@ public class Activo {
     private String nombre;
     private String codigo;
     private CategoriaRecurso categoria;
-    private int plazoDevolucion;
 
     private UUID estadoFisicoId;
     private UUID disponibilidadId;
     private UUID espacioId;
-
-
 }
