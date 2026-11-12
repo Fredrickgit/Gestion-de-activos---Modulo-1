@@ -52,6 +52,13 @@ public class TipoActivoRepositoryImpl implements TipoActivoRepository {
         return jpaRepository.existsById(id);
     }
 
-    // pendiente
+    @Override
+    public Optional<TipoActivo> findByNombre(String nombre) {
+        return jpaRepository.findByNombre(nombre).map(mapper::toDomain);
+    }
 
+    @Override
+    public boolean existsByNombre(String nombre) {
+        return jpaRepository.existsByNombre(nombre);
+    }
 }

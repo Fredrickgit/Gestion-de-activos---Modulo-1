@@ -48,6 +48,19 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- SERIALIZACIÓN JSON PARA LA API REST (Jackson 3 / Spring Boot 4) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jackson</artifactId>
+		</dependency>
+
+		<!-- Jackson 2 requerido por los DTOs y (de)serializadores de Kafka -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>2.21.2</version>
+		</dependency>
+
 		<!-- VALIDACIÓN (Para @UUID, @NotNull en DTOs) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
