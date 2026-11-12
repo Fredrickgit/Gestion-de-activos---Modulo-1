@@ -31,5 +31,8 @@ public class TipoActivo {
     private String nombre;
 
     private String descripcion;
+
+    @Column(name = "plazo_devolucion", nullable = false)
+    private int plazoDevolucion;
 }
 

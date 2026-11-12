@@ -39,6 +39,9 @@ public class Espacio {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(nullable = false, unique = true, length = 100)
+    private String codigo;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

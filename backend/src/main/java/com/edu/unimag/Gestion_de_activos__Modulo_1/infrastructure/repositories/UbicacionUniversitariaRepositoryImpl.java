@@ -1,7 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.UbicacionUniversitaria;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.UbicacionUniversitariaRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.UbicacionUniversitariaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.UbicacionJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.UbicacionMapper;
 import org.springframework.stereotype.Repository;

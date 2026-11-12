@@ -15,6 +15,7 @@ public class TipoActivoMapper {
                 .id(model.getId())
                 .nombre(model.getNombre())
                 .descripcion(model.getDescripcion())
+                .plazoDevolucion(model.getPlazoDevolucion())
                 .build();
     }
 
@@ -28,6 +29,7 @@ public class TipoActivoMapper {
                 .id(domain.getId())
                 .nombre(domain.getNombre())
                 .descripcion(domain.getDescripcion())
+                .plazoDevolucion(domain.getPlazoDevolucion())
                 .build();
     }
 }

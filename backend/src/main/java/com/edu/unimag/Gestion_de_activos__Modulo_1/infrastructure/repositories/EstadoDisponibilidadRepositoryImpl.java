@@ -2,7 +2,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.EstadoDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.EstadoDisponibilidadRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EstadoDisponibilidadRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EstadoDisponibilidadJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.EstadoDisponibilidadMapper;
 import org.springframework.stereotype.Repository;

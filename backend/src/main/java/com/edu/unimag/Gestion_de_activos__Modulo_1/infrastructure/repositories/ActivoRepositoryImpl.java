@@ -2,7 +2,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.ActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.ActivoRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.ActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.ActivoMapper;
 import org.springframework.stereotype.Repository;
@@ -57,6 +57,20 @@ public class ActivoRepositoryImpl implements ActivoRepository {
     }
 
     @Override
+    public List<Activo> findByNombre(String nombre) {
+        return jpaRepository.findByNombre(nombre).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Activo> findByNombreContainingIgnoreCase(String nombre) {
+        return jpaRepository.findByNombreContainingIgnoreCase(nombre).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Activo> findByCategoria(CategoriaRecurso categoria) {
         return jpaRepository.findByCategoria(categoria).stream()
                 .map(mapper::toDomain)
@@ -85,8 +99,20 @@ public class ActivoRepositoryImpl implements ActivoRepository {
     }
 
     @Override
+    public List<Activo> findByTipoActivoId(UUID tipoActivoId) {
+        return jpaRepository.findByTipoActivoId(tipoActivoId).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public boolean existsByEspacioId(UUID espacioId) {
         return jpaRepository.existsByEspacioId(espacioId);
+    }
+
+    @Override
+    public boolean existsByTipoActivoId(UUID tipoActivoId) {
+        return jpaRepository.existsByTipoActivoId(tipoActivoId);
     }
 
     @Override

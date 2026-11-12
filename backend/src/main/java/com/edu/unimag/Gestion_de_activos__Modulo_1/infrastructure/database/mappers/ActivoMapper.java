@@ -19,10 +19,10 @@ public class ActivoMapper {
                 .nombre(model.getNombre())
                 .codigo(model.getCodigo())
                 .categoria(model.getCategoria())
-                .plazoDevolucion(model.getPlazoDevolucion())
                 .estadoFisicoId(model.getEstadoFisicoId())
                 .disponibilidadId(model.getDisponibilidadId())
                 .espacioId(obtenerEspacioId(model))
+                .tipoActivoId(model.getTipoActivoId())
                 .build();
     }
 
@@ -37,9 +37,9 @@ public class ActivoMapper {
                 .nombre(domain.getNombre())
                 .codigo(domain.getCodigo())
                 .categoria(domain.getCategoria())
-                .plazoDevolucion(domain.getPlazoDevolucion())
                 .estadoFisicoId(domain.getEstadoFisicoId())
                 .disponibilidadId(domain.getDisponibilidadId())
+                .tipoActivoId(domain.getTipoActivoId())
                 .espacio(referenciaEspacio(domain.getEspacioId()))
                 .build();
     }

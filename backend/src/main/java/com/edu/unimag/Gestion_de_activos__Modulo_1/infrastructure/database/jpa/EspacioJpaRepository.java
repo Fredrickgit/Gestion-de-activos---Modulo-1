@@ -21,7 +21,13 @@ public interface EspacioJpaRepository extends JpaRepository<Espacio, UUID> {
 
     Optional<Espacio> findByNombre(String nombre);
 
+    List<Espacio> findByNombreContainingIgnoreCase(String nombre);
+
+    Optional<Espacio> findByCodigo(String codigo);
+
     boolean existsByNombre(String nombre);
+
+    boolean existsByCodigo(String codigo);
 
     List<Espacio> findByCategoria(CategoriaRecurso categoria);
 

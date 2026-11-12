@@ -36,6 +36,8 @@ public record CrearActivoRequest(
 
         UUID facultadId,
 
+        UUID tipoActivoId,
+
         @PositiveOrZero(message = "El campo 'plazoDevolucion' debe ser mayor o igual a cero.")
         Integer plazoDevolucion
 ) {

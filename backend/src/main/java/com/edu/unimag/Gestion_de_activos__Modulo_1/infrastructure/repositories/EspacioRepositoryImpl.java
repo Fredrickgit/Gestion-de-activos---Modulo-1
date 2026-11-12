@@ -2,7 +2,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.EspacioRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EspacioRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EspacioJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.EspacioMapper;
 import org.springframework.stereotype.Repository;
@@ -57,6 +57,18 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     }
 
     @Override
+    public List<Espacio> findByNombreContainingIgnoreCase(String nombre) {
+        return jpaRepository.findByNombreContainingIgnoreCase(nombre).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<Espacio> findByCodigo(String codigo) {
+        return jpaRepository.findByCodigo(codigo).map(mapper::toDomain);
+    }
+
+    @Override
     public List<Espacio> findByCategoria(CategoriaRecurso categoria) {
         return jpaRepository.findByCategoria(categoria).stream()
                 .map(mapper::toDomain)
@@ -104,5 +116,10 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     @Override
     public boolean existsByNombre(String nombre) {
         return jpaRepository.existsByNombre(nombre);
+    }
+
+    @Override
+    public boolean existsByCodigo(String codigo) {
+        return jpaRepository.existsByCodigo(codigo);
     }
 }

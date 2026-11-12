@@ -23,7 +23,15 @@ public interface ActivoJpaRepository extends JpaRepository<Activo, UUID> {
 
     boolean existsByCodigo(String codigo);
 
+    List<Activo> findByNombre(String nombre);
+
+    List<Activo> findByNombreContainingIgnoreCase(String nombre);
+
     List<Activo> findByCategoria(CategoriaRecurso categoria);
+
+    List<Activo> findByTipoActivoId(UUID tipoActivoId);
+
+    boolean existsByTipoActivoId(UUID tipoActivoId);
 
     List<Activo> findByEspacioId(UUID espacioId);
 

@@ -24,12 +24,14 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.E
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EspacioJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.FacultadJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.HistorialRecursoJpaRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.TipoActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.UbicacionJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.EstadoActivo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.EstadoDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.HistorialRecurso;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.TipoActivo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Ubicacion;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.external.Modulo2Client;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.external.Modulo3Client;
@@ -73,6 +75,7 @@ public class RecursoApiService {
     private final EstadoActivoJpaRepository estadoActivoRepository;
     private final FacultadJpaRepository facultadRepository;
     private final UbicacionJpaRepository ubicacionRepository;
+    private final TipoActivoJpaRepository tipoActivoRepository;
     private final HistorialRecursoJpaRepository historialRepository;
     private final EstadoActualizadoProducer estadoActualizadoProducer;
     private final Modulo2Client modulo2Client;
@@ -88,6 +91,7 @@ public class RecursoApiService {
                              EstadoActivoJpaRepository estadoActivoRepository,
                              FacultadJpaRepository facultadRepository,
                              UbicacionJpaRepository ubicacionRepository,
+                             TipoActivoJpaRepository tipoActivoRepository,
                              HistorialRecursoJpaRepository historialRepository,
                              EstadoActualizadoProducer estadoActualizadoProducer,
                              Modulo2Client modulo2Client,
@@ -99,6 +103,7 @@ public class RecursoApiService {
         this.estadoActivoRepository = estadoActivoRepository;
         this.facultadRepository = facultadRepository;
         this.ubicacionRepository = ubicacionRepository;
+        this.tipoActivoRepository = tipoActivoRepository;
         this.historialRepository = historialRepository;
         this.estadoActualizadoProducer = estadoActualizadoProducer;
         this.modulo2Client = modulo2Client;
@@ -160,6 +165,7 @@ public class RecursoApiService {
 
         UUID disponibilidadId = obtenerEstadoDisponibilidadId(EstadoDisponibilidadRecurso.DISPONIBLE);
         UUID estadoFisicoId = obtenerEstadoFisicoId(request.estadoFisico());
+        UUID tipoActivoId = obtenerTipoActivoId(request.tipoActivoId());
 
         Activo activo = Activo.builder()
                 .nombre(request.nombre().trim())
@@ -168,6 +174,7 @@ public class RecursoApiService {
                 .plazoDevolucion(request.plazoDevolucion() != null ? request.plazoDevolucion() : 0)
                 .estadoFisicoId(estadoFisicoId)
                 .disponibilidadId(disponibilidadId)
+                .tipoActivoId(tipoActivoId)
                 .espacio(espacio)
                 .build();
 
@@ -186,6 +193,14 @@ public class RecursoApiService {
                     "Ya existe un espacio registrado con el nombre '" + nombre + "'.");
         }
 
+        String codigo = (request.codigo() == null || request.codigo().isBlank())
+                ? generarCodigoEspacio()
+                : request.codigo().trim();
+        if (espacioRepository.existsByCodigo(codigo)) {
+            throw new RecursoDuplicadoException(
+                    "Ya existe un espacio registrado con el código '" + codigo + "'.");
+        }
+
         validarFacultad(request.facultadId());
 
         UUID ubicacionId = resolverUbicacionId(request);
@@ -194,6 +209,7 @@ public class RecursoApiService {
 
         Espacio espacio = Espacio.builder()
                 .nombre(nombre)
+                .codigo(codigo)
                 .categoria(CategoriaRecurso.ESPACIO)
                 .aforoMaximo(request.aforoMaximo())
                 .plazoDevolucion(request.plazoDevolucion() != null ? request.plazoDevolucion() : 0)
@@ -364,6 +380,31 @@ public class RecursoApiService {
                                 .estado(estado)
                                 .descripcion(estado.name())
                                 .build()).getId());
+    }
+
+    private UUID obtenerTipoActivoId(UUID tipoActivoId) {
+        if (tipoActivoId != null) {
+            return tipoActivoRepository.findById(tipoActivoId)
+                    .map(TipoActivo::getId)
+                    .orElseThrow(() -> new EntidadRelacionadaInvalidaException(
+                            "El tipo de activo indicado no existe: " + tipoActivoId));
+        }
+
+        return tipoActivoRepository.findByNombre("GENERAL")
+                .map(TipoActivo::getId)
+                .orElseGet(() -> tipoActivoRepository.saveAndFlush(
+                        TipoActivo.builder()
+                                .nombre("GENERAL")
+                                .descripcion("Tipo de activo por defecto")
+                                .plazoDevolucion(0)
+                                .build()).getId());
+    }
+
+    private String generarCodigoEspacio() {
+        String sufijo = UUID.randomUUID().toString().replace("-", "")
+                .substring(0, 8)
+                .toUpperCase();
+        return "ESP-" + sufijo;
     }
 
     private EstadoDisponibilidadRecurso obtenerEstadoDisponibilidad(UUID disponibilidadId) {

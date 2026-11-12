@@ -1,7 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Facultad;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.FacultadRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.FacultadRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.FacultadJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.FacultadMapper;
 import org.springframework.stereotype.Repository;

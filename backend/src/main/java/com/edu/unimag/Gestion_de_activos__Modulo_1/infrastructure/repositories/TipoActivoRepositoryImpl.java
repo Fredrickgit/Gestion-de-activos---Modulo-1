@@ -2,7 +2,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.repositories;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.TipoActivo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.TipoActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.TipoActivoRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.TipoActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.mappers.TipoActivoMapper;
 import org.springframework.stereotype.Repository;
@@ -55,6 +55,13 @@ public class TipoActivoRepositoryImpl implements TipoActivoRepository {
     @Override
     public Optional<TipoActivo> findByNombre(String nombre) {
         return jpaRepository.findByNombre(nombre).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<TipoActivo> findByNombreContainingIgnoreCase(String nombre) {
+        return jpaRepository.findByNombreContainingIgnoreCase(nombre).stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
     @Override

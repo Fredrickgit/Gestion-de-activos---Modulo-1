@@ -53,6 +53,9 @@ public class Activo {
     @Column(name = "disponibilidad_id", nullable = false)
     private UUID disponibilidadId;
 
+    @Column(name = "tipo_activo_id", nullable = false)
+    private UUID tipoActivoId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "espacio_id")
     private Espacio espacio;

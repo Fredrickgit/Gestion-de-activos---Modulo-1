@@ -4,6 +4,7 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.model
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,8 @@ import java.util.UUID;
 public interface TipoActivoJpaRepository extends JpaRepository<TipoActivo, UUID> {
 
     Optional<TipoActivo> findByNombre(String nombre);
+
+    List<TipoActivo> findByNombreContainingIgnoreCase(String nombre);
 
     boolean existsByNombre(String nombre);
 }

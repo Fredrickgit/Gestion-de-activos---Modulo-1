@@ -48,7 +48,7 @@ public class RecursoReadRepository {
             UNION ALL
             SELECT 'ESPACIO'::text AS tipo,
                    e.id AS id,
-                   NULL::varchar AS codigo,
+                   e.codigo AS codigo,
                    e.nombre AS nombre,
                    ed.disponibilidad::text AS estado,
                    NULL::varchar AS estado_fisico,
@@ -92,7 +92,7 @@ public class RecursoReadRepository {
     private static final String DETALLE_ESPACIO = """
             SELECT 'ESPACIO'::text AS tipo,
                    e.id AS id,
-                   NULL::varchar AS codigo,
+                   e.codigo AS codigo,
                    e.nombre AS nombre,
                    ed.disponibilidad::text AS estado,
                    NULL::varchar AS estado_fisico,
