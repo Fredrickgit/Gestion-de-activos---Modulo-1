@@ -13,6 +13,8 @@ public interface ActivoRepository {
 
     Optional<Activo> findById(UUID id);
 
+    Optional<Activo> findByIdForUpdate(UUID id);
+
     List<Activo> findAll();
 
     boolean existsById(UUID id);

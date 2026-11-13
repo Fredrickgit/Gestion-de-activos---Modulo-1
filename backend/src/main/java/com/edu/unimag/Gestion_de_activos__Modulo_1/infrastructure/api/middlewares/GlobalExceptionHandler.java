@@ -1,13 +1,14 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ErrorResponse;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.ConflictoValidacionExternaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.EntidadRelacionadaInvalidaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.EstadoSinCambioException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.RecursoDuplicadoException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.RecursoNoEncontradoException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.SolicitudInvalidaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.TransicionEstadoInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.ConflictoValidacionExternaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.EntidadRelacionadaInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.RecursoDuplicadoException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.RecursoNoEncontradoException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.SolicitudInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.EstadoSinCambioException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.TransicionEstadoInvalidaException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -74,6 +75,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntidadRelacionadaInvalidaException.class)
     public ResponseEntity<ErrorResponse> handleEntidadInvalida(EntidadRelacionadaInvalidaException ex,
                                                                HttpServletRequest request) {
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomain(DomainException ex,
+                                                      HttpServletRequest request) {
         return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 

@@ -1,5 +1,7 @@
 AntigravityAgent/
 AGENTS.md
 .idea/
+.vscode/
+-l
 backend/.vscode/
 backend/target/

@@ -35,6 +35,11 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     }
 
     @Override
+    public Optional<Espacio> findByIdForUpdate(UUID id) {
+        return jpaRepository.findByIdForUpdate(id).map(mapper::toDomain);
+    }
+
+    @Override
     public List<Espacio> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDomain)

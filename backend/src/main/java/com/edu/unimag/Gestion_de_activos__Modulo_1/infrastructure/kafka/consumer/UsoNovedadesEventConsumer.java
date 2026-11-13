@@ -40,7 +40,7 @@ public class UsoNovedadesEventConsumer {
             groupId = KafkaTopics.CONSUMER_GROUP_M1,
             containerFactory = "highPriorityKafkaListenerContainerFactory"
     )
-    public void onMessage(ConsumerRecord<String, String> record, Acknowledgment ack) {
+    public void onMessage(ConsumerRecord<String, String> record, Acknowledgment ack) throws Exception {
         String key = record.key();
         String payload = record.value();
         String correlationId = extraerHeader(record, KafkaHeaders.CORRELATION_ID);
@@ -92,8 +92,11 @@ public class UsoNovedadesEventConsumer {
                 log.debug("Offset confirmado para partición {} offset {}", record.partition(), record.offset());
             }
         } catch (Exception ex) {
-            log.error("Error al procesar mensaje de M3 [key={}, offset={}]: {}", key, record.offset(), ex.getMessage());
-            throw new RuntimeException("Fallo en procesamiento de evento de uso/novedades M3", ex);
+            log.error("Error al procesar mensaje de M3 [key={}, offset={}]: {}",
+                    key, record.offset(), ex.getMessage(), ex);
+            // Se propaga la excepción original para que el DefaultErrorHandler
+            // aplique correctamente las políticas de reintento/DLT.
+            throw ex;
         }
     }
 

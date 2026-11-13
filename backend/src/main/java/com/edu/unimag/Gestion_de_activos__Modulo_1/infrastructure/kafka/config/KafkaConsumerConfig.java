@@ -89,7 +89,9 @@ public class KafkaConsumerConfig {
         errorHandler.addNotRetryableExceptions(
                 IllegalArgumentException.class,
                 IllegalStateException.class,
-                com.fasterxml.jackson.core.JsonProcessingException.class
+                com.fasterxml.jackson.core.JsonProcessingException.class,
+                com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException.class,
+                com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.ApplicationException.class
         );
 
         errorHandler.addRetryableExceptions(

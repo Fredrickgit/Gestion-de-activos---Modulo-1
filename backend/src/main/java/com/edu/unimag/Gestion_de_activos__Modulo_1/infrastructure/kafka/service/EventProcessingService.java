@@ -3,6 +3,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.service
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoFisicoActivo;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.services.RecursoStateMachine;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.ActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EspacioJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EstadoActivoJpaRepository;
@@ -268,27 +269,7 @@ public class EventProcessingService {
             log.info("El recurso ya se encuentra en el estado {}; no hay cambio necesario.", actual);
             return;
         }
-
-        switch (nuevo) {
-            case EN_USO:
-                if (actual != EstadoDisponibilidadRecurso.DISPONIBLE &&
-                    actual != EstadoDisponibilidadRecurso.RESERVADO) {
-                    throw new IllegalStateException("Transición inválida: No se puede pasar de " + actual + " a " + nuevo);
-                }
-                break;
-            case DISPONIBLE:
-                if (actual != EstadoDisponibilidadRecurso.EN_USO &&
-                    actual != EstadoDisponibilidadRecurso.EN_MANTENIMIENTO &&
-                    actual != EstadoDisponibilidadRecurso.RESERVADO &&
-                    actual != EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO) {
-                    throw new IllegalStateException("Transición inválida: No se puede pasar de " + actual + " a " + nuevo);
-                }
-                break;
-            case EN_MANTENIMIENTO:
-                break;
-            default:
-                break;
-        }
+        RecursoStateMachine.validarTransicion(actual, nuevo);
     }
 
     private CategoriaRecurso resolverCategoria(String categoryStr, UUID recursoId) {

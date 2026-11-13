@@ -38,7 +38,7 @@ public class ReservasEventConsumer {
             groupId = KafkaTopics.CONSUMER_GROUP_M1,
             containerFactory = "kafkaListenerContainerFactory"
     )
-    public void onMessage(ConsumerRecord<String, String> record, Acknowledgment ack) {
+    public void onMessage(ConsumerRecord<String, String> record, Acknowledgment ack) throws Exception {
         String key = record.key();
         String payload = record.value();
         String correlationId = extraerHeader(record, KafkaHeaders.CORRELATION_ID);
@@ -61,8 +61,11 @@ public class ReservasEventConsumer {
                 log.debug("Offset confirmado para partición {} offset {}", record.partition(), record.offset());
             }
         } catch (Exception ex) {
-            log.error("Error al procesar mensaje de M2 [key={}, offset={}]: {}", key, record.offset(), ex.getMessage());
-            throw new RuntimeException("Fallo en procesamiento de evento de reservas M2", ex);
+            log.error("Error al procesar mensaje de M2 [key={}, offset={}]: {}",
+                    key, record.offset(), ex.getMessage(), ex);
+            // Se propaga la excepción original para que el DefaultErrorHandler
+            // aplique correctamente las políticas de reintento/DLT.
+            throw ex;
         }
     }
 

@@ -35,6 +35,11 @@ public class ActivoRepositoryImpl implements ActivoRepository {
     }
 
     @Override
+    public Optional<Activo> findByIdForUpdate(UUID id) {
+        return jpaRepository.findByIdForUpdate(id).map(mapper::toDomain);
+    }
+
+    @Override
     public List<Activo> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDomain)

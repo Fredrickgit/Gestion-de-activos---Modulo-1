@@ -10,6 +10,7 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.valueobjects.Name;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -21,6 +22,7 @@ public class Espacio {
     private final Capacity aforo;
     private final CategoriaRecurso categoria;
     private final LoanPeriod plazoDevolucion;
+    private final List<UUID> equipamiento;
 
     private final UUID facultadId;
     private final UUID disponibilidadId;
@@ -28,7 +30,7 @@ public class Espacio {
 
     @Builder
     public Espacio(UUID id, String nombre, String codigo, int aforo, CategoriaRecurso categoria, int plazoDevolucion,
-                   UUID facultadId, UUID disponibilidadId, UUID ubicacionId) {
+                   UUID facultadId, UUID disponibilidadId, UUID ubicacionId, List<UUID> equipamiento) {
         this.id = id;
         this.nombre = Name.of(nombre, "El nombre del espacio es obligatorio");
         this.codigo = Code.of(codigo, "El codigo del espacio es obligatorio");
@@ -47,6 +49,17 @@ public class Espacio {
         this.facultadId = facultadId;
         this.disponibilidadId = disponibilidadId;
         this.ubicacionId = ubicacionId;
+        this.equipamiento = equipamiento == null ? List.of() : List.copyOf(equipamiento);
+    }
+
+    public Espacio(UUID id, String nombre, String codigo, int aforo, CategoriaRecurso categoria, int plazoDevolucion,
+                   UUID facultadId, UUID disponibilidadId, UUID ubicacionId) {
+        this(id, nombre, codigo, aforo, categoria, plazoDevolucion, facultadId, disponibilidadId, ubicacionId, List.of());
+    }
+
+    public Espacio conDisponibilidad(UUID nuevaDisponibilidadId) {
+        return new Espacio(id, getNombre(), getCodigo(), getAforo(), categoria,
+                getPlazoDevolucion(), facultadId, nuevaDisponibilidadId, ubicacionId, equipamiento);
     }
 
     public String getNombre() {
