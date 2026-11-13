@@ -1,3 +1,53 @@
 spring:
   application:
     name: Gestion-de-activos--Modulo-1
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestion_activos_modulo1}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: GestionActivosHikariPool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:infrastructure/database/connection/migrations
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:m1-activos-consumer-group}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-serializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual_immediate
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  security:
+    user:
+      name: ${SECURITY_USER:admin}
+      password: ${SECURITY_PASSWORD:admin}
+
+external:
+  validation:
+    enabled: ${EXTERNAL_VALIDATION_ENABLED:true}
+  modulo2:
+    base-url: ${MODULO2_BASE_URL:http://localhost:8082}
+    connect-timeout-ms: ${MODULO2_CONNECT_TIMEOUT:2000}
+    read-timeout-ms: ${MODULO2_READ_TIMEOUT:3000}
+  modulo3:
+    base-url: ${MODULO3_BASE_URL:http://localhost:8083}
+    connect-timeout-ms: ${MODULO3_CONNECT_TIMEOUT:2000}
+    read-timeout-ms: ${MODULO3_READ_TIMEOUT:3000}

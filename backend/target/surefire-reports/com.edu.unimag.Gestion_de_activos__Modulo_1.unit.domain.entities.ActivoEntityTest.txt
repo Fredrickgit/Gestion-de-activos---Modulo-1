@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.edu.unimag.Gestion_de_activos__Modulo_1.unit.domain.entities.ActivoEntityTest
--------------------------------------------------------------------------------
-Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.264 s -- in com.edu.unimag.Gestion_de_activos__Modulo_1.unit.domain.entities.ActivoEntityTest
