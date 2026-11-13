@@ -20,10 +20,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for ConsultaInventarios use case.
- * Verifies inventory query operations with proper mocking of repositories.
- */
+
 @ExtendWith(MockitoExtension.class)
 class ConsultaInventariosTest {
 

@@ -26,10 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for resource state update operations.
- * Verifies updates with proper mocking of repositories.
- */
+
 @ExtendWith(MockitoExtension.class)
 class ActualizacionRecursoTest {
 

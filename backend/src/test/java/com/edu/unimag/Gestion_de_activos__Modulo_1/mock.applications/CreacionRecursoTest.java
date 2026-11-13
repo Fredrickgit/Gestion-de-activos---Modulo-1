@@ -28,10 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for CreacionRecurso use case.
- * Verifies the creation of activos and espacios with proper mocking of repositories.
- */
+
 @ExtendWith(MockitoExtension.class)
 class CreacionRecursoTest {
 
@@ -83,6 +80,7 @@ class CreacionRecursoTest {
                 estadoFisicoId,
                 tipoActivoId);
 
+
         when(activoRepository.existsByCodigo("1001")).thenReturn(false);
         when(espacioRepository.existsById(espacioId)).thenReturn(true);
         when(estadoActivoRepository.existsById(estadoFisicoId)).thenReturn(true);
@@ -106,6 +104,9 @@ class CreacionRecursoTest {
                 estadoFisicoId,
                 tipoActivoId);
 
+
+        when(espacioRepository.existsById(espacioId)).thenReturn(true);
+        when(estadoActivoRepository.existsById(estadoFisicoId)).thenReturn(true);
         when(activoRepository.existsByCodigo("1001")).thenReturn(true);
 
         DomainException ex = assertThrows(DomainException.class,
@@ -142,16 +143,17 @@ class CreacionRecursoTest {
     @Test
     @DisplayName("Rechazar creación de espacio con aforo negativo o cero")
     void crearEspacioAforoInvalido() {
-        CrearEspacioInput input = new CrearEspacioInput(
-                "Lab Robótica",
-                "ESP-011",
-                0,
-                facultadId,
-                ubicacionId,
-                12);
 
-        InvalidCapacityException ex = assertThrows(InvalidCapacityException.class,
-                () -> crearEspacio.ejecutar(input));
+        assertThrows(IllegalArgumentException.class, () -> {
+                    CrearEspacioInput input = new CrearEspacioInput(
+                            "Lab Robótica",
+                            "ESP-011",
+                            0,
+                            facultadId,
+                            ubicacionId,
+                            12);
+                });
+
 
         verify(espacioRepository, never()).save(any());
     }

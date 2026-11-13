@@ -49,6 +49,9 @@ public class CrearActivo {
         if (!estadoActivoRepository.existsById(input.estadoFisicoId())) {
             throw new DomainException("El estado físico especificado no existe");
         }
+        if (activoRepository.existsByCodigo(input.codigo())) {
+            throw new DomainException("La placa de inventario/código ya se encuentra registrada");
+        }
 
         Activo activoNuevo = Activo.builder()
                 .nombre(input.nombre())
