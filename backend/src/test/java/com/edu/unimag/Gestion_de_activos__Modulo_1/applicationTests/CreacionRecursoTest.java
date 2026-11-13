@@ -3,8 +3,13 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.*;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.services.CreacionRecurso;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.InvalidCapacityException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.ActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EspacioRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EstadoActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.FacultadRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.UbicacionUniversitariaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +22,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +45,7 @@ class CreacionRecursoTest {
     private UUID estadoDisponibleId;
     private UUID espacioId;
     private UUID estadoFisicoId;
+    private UUID tipoActivoId;
     private UUID facultadId;
     private UUID ubicacionId;
 
@@ -47,6 +54,7 @@ class CreacionRecursoTest {
         estadoDisponibleId = UUID.randomUUID();
         espacioId = UUID.randomUUID();
         estadoFisicoId = UUID.randomUUID();
+        tipoActivoId = UUID.randomUUID();
         facultadId = UUID.randomUUID();
         ubicacionId = UUID.randomUUID();
     }
@@ -56,9 +64,12 @@ class CreacionRecursoTest {
     void crearActivoExitoso() {
         Activo activo = Activo.builder()
                 .nombre("Microscopio #5")
-                .codigo(1001)
+                .codigo("1001")
+                .categoria(CategoriaRecurso.ACTIVO)
                 .espacioId(espacioId)
                 .estadoFisicoId(estadoFisicoId)
+                .disponibilidadId(UUID.randomUUID())
+                .tipoActivoId(tipoActivoId)
                 .build();
 
         when(activoRepository.existsByCodigo("1001")).thenReturn(false);
@@ -71,7 +82,11 @@ class CreacionRecursoTest {
         assertNotNull(creado);
         assertEquals(CategoriaRecurso.ACTIVO, creado.getCategoria());
         assertEquals(estadoDisponibleId, creado.getDisponibilidadId());
-        verify(activoRepository, times(1)).save(activo);
+        verify(activoRepository, times(1)).save(argThat(a ->
+                a.getCodigo().equals("1001")
+                        && a.getCategoria() == CategoriaRecurso.ACTIVO
+                        && a.getDisponibilidadId().equals(estadoDisponibleId)
+        ));
     }
 
     @Test
@@ -79,14 +94,17 @@ class CreacionRecursoTest {
     void crearActivoCodigoDuplicado() {
         Activo activo = Activo.builder()
                 .nombre("Computador Dell")
-                .codigo(1001)
+                .codigo("1001")
+                .categoria(CategoriaRecurso.ACTIVO)
                 .espacioId(espacioId)
                 .estadoFisicoId(estadoFisicoId)
+                .disponibilidadId(estadoDisponibleId)
+                .tipoActivoId(tipoActivoId)
                 .build();
 
         when(activoRepository.existsByCodigo("1001")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        DomainException ex = assertThrows(DomainException.class,
                 () -> creacionRecurso.crearActivo(activo, estadoDisponibleId));
 
         assertEquals("La placa de inventario/código ya se encuentra registrada", ex.getMessage());
@@ -98,8 +116,12 @@ class CreacionRecursoTest {
     void crearEspacioExitoso() {
         Espacio espacio = Espacio.builder()
                 .nombre("Lab Telecomunicaciones")
+                .codigo("ESP-010")
                 .aforo(30)
+                .categoria(CategoriaRecurso.ESPACIO)
+                .plazoDevolucion(12)
                 .facultadId(facultadId)
+                .disponibilidadId(UUID.randomUUID())
                 .ubicacionId(ubicacionId)
                 .build();
 
@@ -113,23 +135,31 @@ class CreacionRecursoTest {
         assertNotNull(creado);
         assertEquals(CategoriaRecurso.ESPACIO, creado.getCategoria());
         assertEquals(estadoDisponibleId, creado.getDisponibilidadId());
-        verify(espacioRepository, times(1)).save(espacio);
+        verify(espacioRepository, times(1)).save(argThat(e ->
+                e.getNombre().equals("Lab Telecomunicaciones")
+                        && e.getCategoria() == CategoriaRecurso.ESPACIO
+                        && e.getDisponibilidadId().equals(estadoDisponibleId)
+        ));
     }
 
     @Test
     @DisplayName("Rechazar creación de espacio con aforo negativo o cero")
     void crearEspacioAforoInvalido() {
-        Espacio espacio = Espacio.builder()
-                .nombre("Lab Robótica")
-                .aforo(0)
-                .facultadId(facultadId)
-                .ubicacionId(ubicacionId)
-                .build();
+        InvalidCapacityException ex = assertThrows(InvalidCapacityException.class, () -> {
+            Espacio espacio = Espacio.builder()
+                    .nombre("Lab Robótica")
+                    .codigo("ESP-011")
+                    .aforo(0)
+                    .categoria(CategoriaRecurso.ESPACIO)
+                    .plazoDevolucion(12)
+                    .facultadId(facultadId)
+                    .disponibilidadId(estadoDisponibleId)
+                    .ubicacionId(ubicacionId)
+                    .build();
+            creacionRecurso.crearEspacio(espacio, estadoDisponibleId);
+        });
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> creacionRecurso.crearEspacio(espacio, estadoDisponibleId));
-
-        assertEquals("El aforo máximo debe ser un número entero positivo mayor a cero", ex.getMessage());
+        assertEquals("El aforo del espacio debe ser mayor que cero", ex.getMessage());
         verify(espacioRepository, never()).save(any());
     }
 }

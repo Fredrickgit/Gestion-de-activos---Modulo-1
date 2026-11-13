@@ -2,9 +2,9 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.ActivoRepository;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.EspacioRepository;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.services.ConsultaDisponibilidad;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.ActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EspacioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +37,16 @@ class ConsultaDisponibilidadTest {
     void consultarDisponibilidadActivoExitoso() {
         UUID activoId = UUID.randomUUID();
         UUID disponibilidadId = UUID.randomUUID();
-        Activo activo = Activo.builder().id(activoId).disponibilidadId(disponibilidadId).build();
+        Activo activo = Activo.builder()
+                .id(activoId)
+                .nombre("Microscopio")
+                .codigo("ACT-100")
+                .categoria(CategoriaRecurso.ACTIVO)
+                .estadoFisicoId(UUID.randomUUID())
+                .disponibilidadId(disponibilidadId)
+                .espacioId(UUID.randomUUID())
+                .tipoActivoId(UUID.randomUUID())
+                .build();
 
         when(activoRepository.findById(activoId)).thenReturn(Optional.of(activo));
 
@@ -52,7 +61,7 @@ class ConsultaDisponibilidadTest {
         UUID activoId = UUID.randomUUID();
         when(activoRepository.findById(activoId)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        DomainException ex = assertThrows(DomainException.class,
                 () -> consultaDisponibilidad.consultarDisponibilidadActivo(activoId));
 
         assertEquals("Recurso no encontrado", ex.getMessage());
@@ -61,7 +70,17 @@ class ConsultaDisponibilidadTest {
     @Test
     @DisplayName("Consultar disponibilidad paginada por categoría")
     void consultarDisponibilidadActivosPorCategoriaExitoso() {
-        Activo a1 = Activo.builder().id(UUID.randomUUID()).categoria(CategoriaRecurso.ACTIVO).build();
+        Activo a1 = Activo.builder()
+                .id(UUID.randomUUID())
+                .nombre("Osciloscopio")
+                .codigo("ACT-101")
+                .categoria(CategoriaRecurso.ACTIVO)
+                .estadoFisicoId(UUID.randomUUID())
+                .disponibilidadId(UUID.randomUUID())
+                .espacioId(UUID.randomUUID())
+                .tipoActivoId(UUID.randomUUID())
+                .build();
+
         when(activoRepository.findByCategoria(CategoriaRecurso.ACTIVO)).thenReturn(List.of(a1));
 
         Page<Activo> pagina = consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0);
@@ -75,7 +94,7 @@ class ConsultaDisponibilidadTest {
     void consultarDisponibilidadCategoriaSinResultados() {
         when(activoRepository.findByCategoria(CategoriaRecurso.ACTIVO)).thenReturn(Collections.emptyList());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        DomainException ex = assertThrows(DomainException.class,
                 () -> consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0));
 
         assertEquals("No se encontraron activos para la categoría especificada", ex.getMessage());

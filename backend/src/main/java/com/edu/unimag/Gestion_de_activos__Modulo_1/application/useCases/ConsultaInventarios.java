@@ -1,10 +1,11 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.domain.services;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.ActivoRepository;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.repositories.EspacioRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.ActivoRepository;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EspacioRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -26,23 +27,22 @@ public class ConsultaInventarios {
 
     public Page<Espacio> buscarEspaciosPorNombre(String nombre, int numeroPagina) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El criterio de búsqueda no puede estar vacío");
+            throw new DomainException("El criterio de búsqueda no puede estar vacío");
         }
 
-        PageRequest pageRequest = PageRequest.of(numeroPagina, 20);
-        Page<Espacio> resultados = espacioRepository.findByNombreContainingIgnoreCase(nombre, pageRequest);
+        List<Espacio> resultados = espacioRepository.findByNombreContainingIgnoreCase(nombre);
 
         if (resultados.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron resultados para los criterios de búsqueda"); 
+            throw new DomainException("No se encontraron resultados para los criterios de búsqueda");
         }
 
-        return resultados;
+        return paginarLista(resultados, numeroPagina);
     }
 
     public Page<Activo> buscarActivosPorCategoria(CategoriaRecurso categoria, int numeroPagina) {
         List<Activo> activos = activoRepository.findByCategoria(categoria);
         if (activos.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron resultados para los criterios de búsqueda"); 
+            throw new DomainException("No se encontraron resultados para los criterios de búsqueda");
         }
 
         return paginarLista(activos, numeroPagina);
@@ -51,7 +51,7 @@ public class ConsultaInventarios {
     public Page<Espacio> buscarEspaciosPorFacultad(UUID facultadId, int numeroPagina) {
         List<Espacio> espacios = espacioRepository.findByFacultadId(facultadId);
         if (espacios.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron resultados para los criterios de búsqueda");
+            throw new DomainException("No se encontraron resultados para los criterios de búsqueda");
         }
 
         return paginarLista(espacios, numeroPagina);
@@ -60,7 +60,7 @@ public class ConsultaInventarios {
     public Page<Espacio> buscarEspaciosPorAforoMinimo(int aforoMinimo, int numeroPagina) {
         List<Espacio> espacios = espacioRepository.findByAforoGreaterThanEqual(aforoMinimo);
         if (espacios.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron resultados para los criterios de búsqueda");
+            throw new DomainException("No se encontraron resultados para los criterios de búsqueda");
         }
 
         return paginarLista(espacios, numeroPagina);
@@ -72,7 +72,7 @@ public class ConsultaInventarios {
         int fin = Math.min((inicio + pageRequest.getPageSize()), lista.size());
 
         if (inicio >= lista.size()) {
-            throw new IllegalArgumentException("No hay más registros");
+            throw new DomainException("No hay más registros");
         }
 
         return new PageImpl<>(lista.subList(inicio, fin), pageRequest, lista.size());
