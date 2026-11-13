@@ -1,5 +1,6 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.mock.applications;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.ActualizacionRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.EstadoActivo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
@@ -21,7 +22,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,10 +29,13 @@ class ActualizacionRecursoTest {
 
     @Mock
     private ActivoRepository activoRepository;
+
     @Mock
     private EspacioRepository espacioRepository;
+
     @Mock
     private EstadoDisponibilidadRepository estadoDisponibilidadRepository;
+
     @Mock
     private EstadoActivoRepository estadoActivoRepository;
 

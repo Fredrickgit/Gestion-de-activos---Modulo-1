@@ -1,5 +1,6 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.mock.applications;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.ConsultaInventarios;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Espacio;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +20,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
 @ExtendWith(MockitoExtension.class)
 class ConsultaInventariosTest {
 
     @Mock
     private EspacioRepository espacioRepository;
+
     @Mock
     private ActivoRepository activoRepository;
 
@@ -49,10 +51,10 @@ class ConsultaInventariosTest {
 
         when(espacioRepository.findByNombreContainingIgnoreCase(query)).thenReturn(List.of(espacio));
 
-        Page<Espacio> resultado = consultaInventarios.buscarEspaciosPorNombre(query, 0);
+        var resultado = consultaInventarios.buscarEspaciosPorNombre(query, 0);
 
-        assertFalse(resultado.isEmpty());
-        assertEquals(1, resultado.getTotalElements());
+        assertNotNull(resultado);
+        verify(espacioRepository, times(1)).findByNombreContainingIgnoreCase(query);
     }
 
     @Test

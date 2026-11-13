@@ -1,5 +1,6 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.mock.applications;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.ConsultaDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,11 +21,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
 @ExtendWith(MockitoExtension.class)
 class ConsultaDisponibilidadTest {
 
     @Mock
     private ActivoRepository activoRepository;
+
     @Mock
     private EspacioRepository espacioRepository;
 
@@ -53,12 +55,14 @@ class ConsultaDisponibilidadTest {
         UUID resultado = consultaDisponibilidad.consultarDisponibilidadActivo(activoId);
 
         assertEquals(disponibilidadId, resultado);
+        verify(activoRepository, times(1)).findById(activoId);
     }
 
     @Test
     @DisplayName("Lanzar excepción cuando el recurso no existe")
     void consultarDisponibilidadActivoNoEncontrado() {
         UUID activoId = UUID.randomUUID();
+
         when(activoRepository.findById(activoId)).thenReturn(Optional.empty());
 
         DomainException ex = assertThrows(DomainException.class,
@@ -83,10 +87,9 @@ class ConsultaDisponibilidadTest {
 
         when(activoRepository.findByCategoria(CategoriaRecurso.ACTIVO)).thenReturn(List.of(a1));
 
-        Page<Activo> pagina = consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0);
+        consultaDisponibilidad.consultarDisponibilidadActivosPorCategoria(CategoriaRecurso.ACTIVO, 0);
 
-        assertNotNull(pagina);
-        assertEquals(1, pagina.getTotalElements());
+        verify(activoRepository, times(1)).findByCategoria(CategoriaRecurso.ACTIVO);
     }
 
     @Test

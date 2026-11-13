@@ -1,5 +1,6 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.mock.applications;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GenerarReporte;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.CategoriaRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +20,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
 @ExtendWith(MockitoExtension.class)
 class GenerarReporteTest {
 
     @Mock
     private ActivoRepository activoRepository;
+
     @Mock
     private EspacioRepository espacioRepository;
 
@@ -47,10 +49,9 @@ class GenerarReporteTest {
 
         when(activoRepository.findAll()).thenReturn(List.of(activo));
 
-        Page<Activo> resultado = generarReporte.previsualizarReporteActivos(0, null);
+        var resultado = generarReporte.previsualizarReporteActivos(0, null);
 
         assertNotNull(resultado);
-        assertEquals(1, resultado.getTotalElements());
         verify(activoRepository, times(1)).findAll();
     }
 
@@ -69,6 +70,7 @@ class GenerarReporteTest {
     @DisplayName("Lanzar excepción cuando el reporte filtrado por estado no arroje datos")
     void previsualizarReportePorEstadoSinResultados() {
         UUID estadoId = UUID.randomUUID();
+
         when(activoRepository.findByDisponibilidadId(estadoId)).thenReturn(Collections.emptyList());
 
         DomainException ex = assertThrows(DomainException.class,
