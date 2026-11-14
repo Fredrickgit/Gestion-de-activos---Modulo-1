@@ -24,7 +24,8 @@ public class UbicacionUniversitariaRepositoryImpl implements UbicacionUniversita
     @Override
     public UbicacionUniversitaria save(UbicacionUniversitaria entity) {
         var model = mapper.toModel(entity);
-        var saved = jpaRepository.save(model);
+        // Flush para que la lectura CQRS posterior vea la fila recién insertada.
+        var saved = jpaRepository.saveAndFlush(model);
         return mapper.toDomain(saved);
     }
 

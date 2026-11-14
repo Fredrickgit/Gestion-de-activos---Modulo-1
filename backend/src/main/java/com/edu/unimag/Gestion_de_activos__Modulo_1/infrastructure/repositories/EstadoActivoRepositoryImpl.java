@@ -25,7 +25,8 @@ public class EstadoActivoRepositoryImpl implements EstadoActivoRepository {
     @Override
     public EstadoActivo save(EstadoActivo entity) {
         var model = mapper.toModel(entity);
-        var saved = jpaRepository.save(model);
+        // Flush para que la lectura CQRS posterior vea la fila recién insertada.
+        var saved = jpaRepository.saveAndFlush(model);
         return mapper.toDomain(saved);
     }
 

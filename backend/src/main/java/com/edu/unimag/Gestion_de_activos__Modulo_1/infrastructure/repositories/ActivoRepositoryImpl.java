@@ -25,7 +25,10 @@ public class ActivoRepositoryImpl implements ActivoRepository {
     @Override
     public Activo save(Activo entity) {
         var model = mapper.toModel(entity);
-        var saved = jpaRepository.save(model);
+        // saveAndFlush: la lectura CQRS posterior (JDBC, misma transacción)
+        // debe ver la fila recién insertada. Con save() el INSERT podía
+        // ejecutarse recién en el commit y la creación devolvía 404.
+        var saved = jpaRepository.saveAndFlush(model);
         return mapper.toDomain(saved);
     }
 

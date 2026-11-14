@@ -20,6 +20,8 @@ Guía del Módulo 1 — Spring Boot 4 + PostgreSQL + Kafka.
 | `RenderDatabaseEnvironmentPostProcessor` | Convierte `DATABASE_URL` de Render (`postgresql://...`) a una URL JDBC válida. |
 | `spring-boot-starter-flyway` en `pom.xml` | En Spring Boot 4 la autoconfiguración de Flyway ya no viene con `flyway-core`. Sin esto las migraciones **no se ejecutan**. |
 | `KAFKA_LISTENERS_AUTO_STARTUP` | Permite arrancar sin broker Kafka. |
+| `KAFKA_PRODUCER_*` | Timeouts cortos del productor para que el outbox no bloquee 60 s si Kafka no responde. |
+| `SecurityConfig` | HTTP Basic, sesión sin estado, CSRF desactivado y roles `DIRECCION`/`MONITOR`. |
 | `OUTBOX_RELAY_ENABLED` | Permite desactivar el relay del outbox sin Kafka. |
 | `EXTERNAL_VALIDATION_ENABLED` | Permite desactivar las llamadas a los módulos 2 y 3. |
 
@@ -50,10 +52,11 @@ evitar la conversión, define `DB_URL` ya en formato JDBC (tiene prioridad).
 3. Flujo Gitflow del proyecto: trabajar en `feature/*`, PR hacia `develop`.
    No hacer push directo a `main` ni a `develop`.
 
-> **Estado actual (importante):** la rama `feature/application` tiene errores de
-> compilación previos (mapeador de resumen, firma de `listar`/`disponibilidad`
-> y `marcarBaja` sin implementar). Hay que corregirlos y mergear a `develop`
-> antes de desplegar. La rama `develop` sí compila.
+> **Estado actual:** el backend de `feature/application` compila correctamente y
+> la suite pasa con `./mvnw clean test` (157 tests). Incluye Flyway, outbox,
+> seguridad HTTP Basic con roles, corrección de lectura tras escritura y
+> Dockerfile listo para Render. Antes de desplegar, verifica siempre que la rama
+> seleccionada pase tests y build.
 
 ---
 
@@ -150,6 +153,12 @@ SECURITY_USER=<usuario>
 SECURITY_PASSWORD=<contraseña fuerte>
 ```
 
+> `SECURITY_USER` tiene el rol **DIRECCION**: puede consultar, crear
+> activos/espacios y cambiar estados. Si necesitas un usuario de solo lectura,
+> define además `SECURITY_MONITOR_USER` y `SECURITY_MONITOR_PASSWORD` (rol
+> **MONITOR**). Los orígenes permitidos para CORS se ajustan con
+> `CORS_ALLOWED_ORIGINS` (por defecto `*`).
+
 > Opcional: `JAVA_OPTS` ya se define en el Dockerfile con
 > `-XX:MaxRAMPercentage=75` para no exceder los 512 MB del plan gratuito.
 
@@ -228,14 +237,15 @@ docker run --rm -p 10000:10000 \
 | `OutOfMemoryError` | Heap mayor a 512 MB. | Mantener `-XX:MaxRAMPercentage=75` y no subir el pool de conexiones. |
 | La app arranca pero logs llenos de `Connection to node -1 could not be established` | Listeners de Kafka activos. | `KAFKA_LISTENERS_AUTO_STARTUP=false`. |
 | Timeout al crear/actualizar recursos | Validación externa intentando llegar a los módulos 2 y 3. | `EXTERNAL_VALIDATION_ENABLED=false`. |
+| `401` en `POST`/`PATCH` | Falta configuración de seguridad o CSRF activo. | La rama ya incluye `SecurityConfig`; usar HTTP Basic con las credenciales configuradas. |
+| `404` justo después de crear un recurso | Lectura CQRS antes del flush del INSERT. | Ya corregido con `saveAndFlush` en los repositorios de escritura. |
 
 ---
 
 ## 9. Orden recomendado de trabajo
 
-1. Corregir los errores de compilación de `feature/application`.
-2. Ejecutar `cd backend && ./mvnw test`.
-3. Abrir PR de `feature/application` → `develop` y mergear.
-4. Crear el Blueprint o el Web Service en Render apuntando a `develop`.
-5. Configurar `SECURITY_USER`/`SECURITY_PASSWORD`.
-6. Verificar `/api/v1/recursos` con `curl`.
+1. Ejecutar `cd backend && ./mvnw clean test` y confirmar que pasa (157 tests).
+2. Abrir PR de `feature/application` → `develop` y mergear.
+3. Crear el Blueprint o el Web Service en Render apuntando a `develop`.
+4. Configurar `SECURITY_USER`/`SECURITY_PASSWORD`.
+5. Verificar `/api/v1/recursos` con `curl`.
