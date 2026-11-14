@@ -4,17 +4,9 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoD
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.EstadoSinCambioException;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.TransicionEstadoInvalidaException;
 
-/**
- * Reglas de transición del ciclo de vida de un recurso.
- *
- * <p>Es la única implementación de la máquina de estados del sistema: tanto la
- * actualización manual por REST como el consumo de eventos Kafka deben usarla
- * para evitar reglas divergentes.</p>
- */
 public final class RecursoStateMachine {
 
     private RecursoStateMachine() {
-        // Utility class
     }
 
     public static void validarTransicion(EstadoDisponibilidadRecurso actual,
@@ -39,8 +31,6 @@ public final class RecursoStateMachine {
         }
 
         return switch (actual) {
-            // Un recurso disponible puede empezar a usarse, reservarse, bloquearse o
-            // enviarse a mantenimiento.
             case DISPONIBLE -> nuevo == EstadoDisponibilidadRecurso.EN_USO
                     || nuevo == EstadoDisponibilidadRecurso.RESERVADO
                     || nuevo == EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO
@@ -52,8 +42,6 @@ public final class RecursoStateMachine {
                     || nuevo == EstadoDisponibilidadRecurso.EN_USO
                     || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
             case BLOQUEO_ACADEMICO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE;
-            // Salir de mantenimiento exige una revisión técnica intermedia que no
-            // puede resolverse con una transición directa a DISPONIBLE.
             case EN_MANTENIMIENTO -> false;
         };
     }

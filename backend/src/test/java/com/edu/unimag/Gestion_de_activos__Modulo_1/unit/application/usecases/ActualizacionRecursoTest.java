@@ -91,6 +91,62 @@ class ActualizacionRecursoTest {
     }
 
     @Test
+    @DisplayName("Actualizar disponibilidad de espacio exitosamente")
+    void actualizarDisponibilidadEspacioExitoso() {
+        UUID espacioId = UUID.randomUUID();
+        UUID nuevaDisponibilidadId = UUID.randomUUID();
+
+        Espacio espacio = Espacio.builder()
+                .id(espacioId)
+                .nombre("Lab Telecomunicaciones")
+                .codigo("ESP-010")
+                .aforo(30)
+                .categoria(CategoriaRecurso.ESPACIO)
+                .plazoDevolucion(24)
+                .facultadId(UUID.randomUUID())
+                .disponibilidadId(UUID.randomUUID())
+                .ubicacionId(UUID.randomUUID())
+                .build();
+
+        when(estadoDisponibilidadRepository.existsById(nuevaDisponibilidadId)).thenReturn(true);
+        when(espacioRepository.findById(espacioId)).thenReturn(Optional.of(espacio));
+        when(espacioRepository.save(any(Espacio.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Espacio actualizado = actualizarDisponibilidadEspacio.ejecutar(espacioId, nuevaDisponibilidadId);
+
+        assertEquals(nuevaDisponibilidadId, actualizado.getDisponibilidadId());
+        verify(espacioRepository, times(1)).save(any(Espacio.class));
+    }
+
+    @Test
+    @DisplayName("Bloquear actualización si el espacio ya está en ese mismo estado")
+    void actualizarDisponibilidadEspacioMismoEstado() {
+        UUID espacioId = UUID.randomUUID();
+        UUID estadoId = UUID.randomUUID();
+
+        Espacio espacio = Espacio.builder()
+                .id(espacioId)
+                .nombre("Lab Telecomunicaciones")
+                .codigo("ESP-010")
+                .aforo(30)
+                .categoria(CategoriaRecurso.ESPACIO)
+                .plazoDevolucion(24)
+                .facultadId(UUID.randomUUID())
+                .disponibilidadId(estadoId)
+                .ubicacionId(UUID.randomUUID())
+                .build();
+
+        when(estadoDisponibilidadRepository.existsById(estadoId)).thenReturn(true);
+        when(espacioRepository.findById(espacioId)).thenReturn(Optional.of(espacio));
+
+        DomainException ex = assertThrows(DomainException.class,
+                () -> actualizarDisponibilidadEspacio.ejecutar(espacioId, estadoId));
+
+        assertEquals("El recurso ya se encuentra en el estado seleccionado.", ex.getMessage());
+        verify(espacioRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Actualizar el estado físico de un activo usando enums")
     void actualizarEstadoFisicoActivoExitoso() {
         UUID activoId = UUID.randomUUID();
