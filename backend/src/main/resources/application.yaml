@@ -1,10 +1,18 @@
+server:
+  # Render inyecta PORT (por defecto 10000). En local se usa 8080.
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
+
 spring:
   application:
     name: Gestion-de-activos--Modulo-1
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestion_activos_modulo1}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    # Prioridad: DB_URL (JDBC explícita) > DB_HOST/DB_PORT/DB_NAME > localhost.
+    # Si el servicio se despliega con la URL de Render (postgresql://...),
+    # RenderDatabaseEnvironmentPostProcessor la convierte a jdbc:postgresql://...
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:gestion_activos_modulo1}}
+    username: ${DB_USERNAME:${PGUSER:postgres}}
+    password: ${DB_PASSWORD:${PGPASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: GestionActivosHikariPool
@@ -30,6 +38,10 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     listener:
       ack-mode: manual_immediate
+      # En Render (plan gratuito) no hay broker Kafka disponible.
+      # Se desactiva con KAFKA_LISTENERS_AUTO_STARTUP=false para que la app
+      # arranque sin intentar conectarse a localhost:9092.
+      auto-startup: ${KAFKA_LISTENERS_AUTO_STARTUP:true}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -37,6 +49,13 @@ spring:
     user:
       name: ${SECURITY_USER:admin}
       password: ${SECURITY_PASSWORD:admin}
+
+outbox:
+  relay:
+    # El relay publica eventos pendientes en Kafka. En Render sin Kafka se
+    # desactiva con OUTBOX_RELAY_ENABLED=false.
+    enabled: ${OUTBOX_RELAY_ENABLED:true}
+    delay-ms: ${OUTBOX_RELAY_DELAY_MS:5000}
 
 external:
   validation:

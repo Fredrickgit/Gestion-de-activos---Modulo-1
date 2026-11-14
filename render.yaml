@@ -1,0 +1,57 @@
+# Blueprint de Render (opcional pero recomendado).
+# Permite crear el servicio web y la base de datos con un solo clic:
+#   Render Dashboard -> New -> Blueprint -> seleccionar el repositorio.
+#
+# El servicio se construye con backend/Dockerfile y el contexto backend/.
+databases:
+  - name: gestion-activos-db
+    plan: free
+    region: oregon
+    databaseName: gestion_activos_modulo1
+    user: gestion_activos
+
+services:
+  - type: web
+    name: gestion-activos-m1
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    autoDeployTrigger: commit
+    envVars:
+      # Credenciales de la base de datos inyectadas por Render.
+      - key: DB_HOST
+        fromDatabase:
+          name: gestion-activos-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: gestion-activos-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: gestion-activos-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: gestion-activos-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: gestion-activos-db
+          property: password
+
+      # En el plan gratuito no hay Kafka ni los modulos 2 y 3 desplegados.
+      - key: KAFKA_LISTENERS_AUTO_STARTUP
+        value: "false"
+      - key: OUTBOX_RELAY_ENABLED
+        value: "false"
+      - key: EXTERNAL_VALIDATION_ENABLED
+        value: "false"
+
+      # Credenciales de la API (HTTP Basic). Se piden al crear el Blueprint.
+      - key: SECURITY_USER
+        sync: false
+      - key: SECURITY_PASSWORD
+        sync: false
