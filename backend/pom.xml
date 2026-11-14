@@ -90,9 +90,11 @@
 
 
 		<!--FLYWAY PARA MIGRACIONES DE BASE DE DATOS-->
+		<!-- Spring Boot 4 movió la autoconfiguración a spring-boot-starter-flyway.
+		     Solo con flyway-core las migraciones NO se ejecutan. -->
 		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>

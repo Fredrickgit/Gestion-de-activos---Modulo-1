@@ -39,6 +39,9 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id:m1-activos-consumer-group}")
     private String groupId;
 
+    @Value("${spring.kafka.listener.auto-startup:true}")
+    private boolean listenerAutoStartup;
+
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -116,6 +119,7 @@ public class KafkaConsumerConfig {
         factory.setConsumerFactory(consumerFactory);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         factory.setCommonErrorHandler(defaultErrorHandler);
+        factory.setAutoStartup(listenerAutoStartup);
 
         return factory;
     }
@@ -131,6 +135,7 @@ public class KafkaConsumerConfig {
         factory.setConcurrency(3);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         factory.setCommonErrorHandler(defaultErrorHandler);
+        factory.setAutoStartup(listenerAutoStartup);
 
         return factory;
     }
