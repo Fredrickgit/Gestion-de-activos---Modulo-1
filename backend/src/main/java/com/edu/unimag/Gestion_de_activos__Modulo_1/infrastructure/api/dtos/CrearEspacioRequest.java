@@ -1,6 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -23,6 +24,7 @@ public record CrearEspacioRequest(
         @Size(max = 255, message = "El campo 'nombre' no puede superar los 255 caracteres.")
         String nombre,
 
+        @NotBlank(message = "El campo 'codigo' es obligatorio.")
         @Size(max = 100, message = "El campo 'codigo' no puede superar los 100 caracteres.")
         @Pattern(regexp = "^[A-Za-z0-9._-]+$",
                 message = "El campo 'codigo' solo admite letras, números, puntos, guiones y guiones bajos.")
@@ -40,6 +42,7 @@ public record CrearEspacioRequest(
         @Size(max = 255, message = "El campo 'edificio' no puede superar los 255 caracteres.")
         String edificio,
 
+        @NotEmpty(message = "El campo 'equipamiento' es obligatorio y debe contener al menos un activo.")
         List<@NotNull(message = "Cada elemento de 'equipamiento' debe ser un UUID válido.") UUID> equipamiento,
 
         @PositiveOrZero(message = "El campo 'plazoDevolucion' debe ser mayor o igual a cero.")

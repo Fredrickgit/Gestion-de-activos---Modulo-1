@@ -7,7 +7,9 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.Disponibilid
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.EstadoActualizadoView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.PaginaView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoDetalleView;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoResumenView;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ReporteView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.ConflictoValidacionExternaException;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.EntidadRelacionadaInvalidaException;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.RecursoDuplicadoException;
@@ -40,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -98,16 +101,36 @@ public class GestionRecursos {
         this.transactionPort = transactionPort;
     }
 
-    public PaginaView<RecursoResumenView> listar(String tipo,
-                                                 String estado,
-                                                 UUID facultadId,
-                                                 String facultadNombre,
+    public PaginaView<RecursoResumenView> listar(RecursoFiltro filtro,
                                                  int page,
                                                  int size) {
         List<RecursoResumenView> content = recursoQueryPort.listar(
-                tipo, estado, facultadId, facultadNombre, page, size);
-        long total = recursoQueryPort.contar(tipo, estado, facultadId, facultadNombre);
+                filtro, "nombre", "ASC", page, size);
+        long total = recursoQueryPort.contar(filtro);
         return new PaginaView<>(content, page, size, total);
+    }
+
+    /**
+     * Genera la vista previa del reporte de inventario (SPEC-HISTORIA4).
+     * Mantiene el ordenamiento estable por ID y ajusta la página solicitada a la
+     * última disponible cuando el cliente pide una fuera de rango.
+     */
+    public ReporteView generarReporte(RecursoFiltro filtro,
+                                      String orden,
+                                      String direccion,
+                                      int page,
+                                      int size) {
+        long total = recursoQueryPort.contar(filtro);
+        int totalPaginas = total == 0 ? 0 : (int) Math.ceil((double) total / size);
+        int paginaEfectiva = page;
+        if (totalPaginas > 0 && page >= totalPaginas) {
+            paginaEfectiva = totalPaginas - 1;
+        }
+
+        List<RecursoResumenView> content = recursoQueryPort.listar(
+                filtro, orden, direccion, paginaEfectiva, size);
+
+        return new ReporteView(content, paginaEfectiva, size, total, totalPaginas, OffsetDateTime.now());
     }
 
     public RecursoDetalleView obtener(UUID id) {
@@ -116,7 +139,17 @@ public class GestionRecursos {
                         "No se encontró un recurso con el id '" + id + "'."));
     }
 
-    public DisponibilidadView disponibilidad(UUID id) {
+    public DisponibilidadView disponibilidad(UUID id, OffsetDateTime fechaHora) {
+        if (fechaHora != null) {
+            // Normalización a la zona horaria institucional (UTC-5) y rechazo de
+            // consultas sobre fechas ya pasadas (SPEC-HISTORIA0, FR-005).
+            OffsetDateTime normalizada = fechaHora.withOffsetSameInstant(ZoneOffset.ofHours(-5));
+            if (normalizada.isBefore(OffsetDateTime.now(ZoneOffset.ofHours(-5)))) {
+                throw new SolicitudInvalidaException(
+                        "La fecha y hora de consulta no puede ser anterior al momento actual.");
+            }
+        }
+
         RecursoDetalleView recurso = obtener(id);
         EstadoDisponibilidadRecurso estado = parseEstadoAlmacenado(recurso.estado());
 
@@ -246,17 +279,19 @@ public class GestionRecursos {
                     estadoAnterior.name(),
                     estadoNuevo.name(),
                     usuario,
-                    LocalDateTime.now(),
+                    timestamp.toLocalDateTime(),
                     motivo);
 
-            transactionPort.afterCommit(() -> estadoActualizadoPort.publicar(
+            // El adaptador escribe en el outbox dentro de esta misma transacción:
+            // estado, historial y evento quedan atómicamente consistentes.
+            estadoActualizadoPort.publicar(
                     correlationId,
                     id,
                     tipo,
                     estadoAnterior.name(),
                     estadoNuevo.name(),
                     motivo,
-                    usuario));
+                    usuario);
 
             log.info("Estado actualizado manualmente: recurso={}, {} -> {}, usuario={}",
                     id, estadoAnterior, estadoNuevo, usuario);

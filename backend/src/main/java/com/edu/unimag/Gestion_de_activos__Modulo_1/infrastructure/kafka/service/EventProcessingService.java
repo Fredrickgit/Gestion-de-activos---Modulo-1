@@ -72,11 +72,6 @@ public class EventProcessingService {
             throw new IllegalArgumentException("El evento notificacion.uso carece de datos del recurso.");
         }
 
-        if (esDuplicado(eventoId)) {
-            log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
-            return;
-        }
-
         UUID recursoId = data.getResourceId();
         CategoriaRecurso categoria = resolverCategoria(data.getResourceCategory(), recursoId);
         LocalDateTime fechaEvento = event.getTimestamp() != null ? event.getTimestamp().toLocalDateTime() : LocalDateTime.now();
@@ -86,8 +81,16 @@ public class EventProcessingService {
         UUID nuevoEstadoDispId = obtenerEstadoDisponibilidadId(EstadoDisponibilidadRecurso.EN_USO);
 
         if (categoria == CategoriaRecurso.ACTIVO) {
+            // El bloqueo de la fila se toma antes de comprobar la idempotencia: dos
+            // entregas concurrentes del mismo recurso se serializan y la segunda ya
+            // observa el registro en eventos_procesados.
             Activo activo = activoRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Activo no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(activo.getDisponibilidadId());
 
@@ -98,6 +101,11 @@ public class EventProcessingService {
         } else {
             Espacio espacio = espacioRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(espacio.getDisponibilidadId());
 
@@ -132,11 +140,6 @@ public class EventProcessingService {
             throw new IllegalArgumentException("El evento reserva.finalizada carece de datos del recurso.");
         }
 
-        if (esDuplicado(eventoId)) {
-            log.warn("Evento reserva.finalizada duplicado ignorado: {}", eventoId);
-            return;
-        }
-
         UUID recursoId = data.getResourceId();
         CategoriaRecurso categoria = resolverCategoria(data.getResourceCategory(), recursoId);
         LocalDateTime fechaEvento = data.getRealCheckoutDate() != null
@@ -150,6 +153,11 @@ public class EventProcessingService {
         if (categoria == CategoriaRecurso.ACTIVO) {
             Activo activo = activoRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Activo no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento reserva.finalizada duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(activo.getDisponibilidadId());
 
@@ -167,6 +175,11 @@ public class EventProcessingService {
         } else {
             Espacio espacio = espacioRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento reserva.finalizada duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(espacio.getDisponibilidadId());
 
@@ -201,11 +214,6 @@ public class EventProcessingService {
             throw new IllegalArgumentException("El evento reporte.danos carece de datos del recurso.");
         }
 
-        if (esDuplicado(eventoId)) {
-            log.warn("Evento reporte.danos duplicado ignorado: {}", eventoId);
-            return;
-        }
-
         UUID recursoId = data.getResourceId();
         CategoriaRecurso categoria = resolverCategoria(data.getResourceCategory(), recursoId);
         LocalDateTime fechaEvento = event.getTimestamp() != null ? event.getTimestamp().toLocalDateTime() : LocalDateTime.now();
@@ -219,6 +227,11 @@ public class EventProcessingService {
         if (categoria == CategoriaRecurso.ACTIVO) {
             Activo activo = activoRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Activo no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento reporte.danos duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(activo.getDisponibilidadId());
 
@@ -234,6 +247,11 @@ public class EventProcessingService {
         } else {
             Espacio espacio = espacioRepo.findByIdForUpdate(recursoId)
                     .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado con ID: " + recursoId));
+
+            if (esDuplicado(eventoId)) {
+                log.warn("Evento reporte.danos duplicado ignorado: {}", eventoId);
+                return;
+            }
 
             estadoAnteriorEnum = obtenerEstadoDisponibilidadEnum(espacio.getDisponibilidadId());
 
@@ -308,7 +326,11 @@ public class EventProcessingService {
         try {
             return EstadoFisicoActivo.valueOf(clean);
         } catch (IllegalArgumentException ex) {
-            return EstadoFisicoActivo.MAL_ESTADO;
+            // Un valor no reconocido es un mensaje venenoso: no se debe degradar
+            // silenciosamente el activo. El DefaultErrorHandler lo enviará a la DLT.
+            throw new IllegalArgumentException(
+                    "Estado físico no reconocido en el evento: '" + rawState + "'. Valores permitidos: "
+                            + java.util.Arrays.toString(EstadoFisicoActivo.values()));
         }
     }
 
@@ -325,9 +347,15 @@ public class EventProcessingService {
     }
 
     private EstadoDisponibilidadRecurso obtenerEstadoDisponibilidadEnum(UUID id) {
+        if (id == null) {
+            throw new IllegalStateException(
+                    "El recurso no tiene un estado de disponibilidad asociado en la base de datos.");
+        }
         return estadoDisponibilidadRepo.findById(id)
                 .map(EstadoDisponibilidad::getDisponibilidadRecurso)
-                .orElse(EstadoDisponibilidadRecurso.DISPONIBLE);
+                .orElseThrow(() -> new IllegalStateException(
+                        "No existe el estado de disponibilidad con id " + id
+                                + "; los datos del recurso están corruptos."));
     }
 
     private UUID obtenerEstadoFisicoId(EstadoFisicoActivo estadoEnum) {
@@ -392,7 +420,10 @@ public class EventProcessingService {
         try {
             return UUID.fromString(clean);
         } catch (IllegalArgumentException ex) {
-            return UUID.nameUUIDFromBytes(clean.getBytes());
+            // No se debe inventar un identificador: un eventoId inválido impide
+            // garantizar idempotencia y debe tratarse como mensaje venenoso (DLT).
+            throw new IllegalArgumentException(
+                    "El campo '" + fieldName + "' no es un UUID válido: '" + str + "'.", ex);
         }
     }
 }

@@ -42,4 +42,11 @@ public interface ActivoRepository {
     boolean existsByTipoActivoId(UUID tipoActivoId);
 
     boolean existsByCodigo(String codigo);
+
+    /**
+     * Marca el activo como dado de baja lógicamente.
+     *
+     * @return número de filas afectadas (0 si el recurso no existe)
+     */
+    int marcarBaja(UUID id);
 }

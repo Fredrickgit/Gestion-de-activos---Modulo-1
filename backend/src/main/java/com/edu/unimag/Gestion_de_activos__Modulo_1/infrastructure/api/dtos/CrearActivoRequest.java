@@ -36,6 +36,7 @@ public record CrearActivoRequest(
 
         UUID facultadId,
 
+        @NotNull(message = "El campo 'tipoActivoId' es obligatorio.")
         UUID tipoActivoId,
 
         @PositiveOrZero(message = "El campo 'plazoDevolucion' debe ser mayor o igual a cero.")

@@ -1,5 +1,6 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record RecursoResumenView(
@@ -12,6 +13,7 @@ public record RecursoResumenView(
         String facultad,
         String ubicacion,
         Integer aforoMaximo,
-        Integer plazoDevolucion
+        Integer plazoDevolucion,
+        LocalDateTime fechaRegistro
 ) {
 }

@@ -1,6 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.adapters;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoDetalleView;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoResumenView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.ports.RecursoQueryPort;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.RecursoDetalleResponse;
@@ -25,24 +26,20 @@ public class RecursoQueryAdapter implements RecursoQueryPort {
     }
 
     @Override
-    public List<RecursoResumenView> listar(String tipo,
-                                           String estado,
-                                           UUID facultadId,
-                                           String facultadNombre,
+    public List<RecursoResumenView> listar(RecursoFiltro filtro,
+                                           String orden,
+                                           String direccion,
                                            int page,
                                            int size) {
-        return recursoReadRepository.listar(tipo, estado, facultadId, facultadNombre, page, size)
+        return recursoReadRepository.listar(filtro, orden, direccion, page, size)
                 .stream()
                 .map(this::toView)
                 .toList();
     }
 
     @Override
-    public long contar(String tipo,
-                       String estado,
-                       UUID facultadId,
-                       String facultadNombre) {
-        return recursoReadRepository.contar(tipo, estado, facultadId, facultadNombre);
+    public long contar(RecursoFiltro filtro) {
+        return recursoReadRepository.contar(filtro);
     }
 
     @Override
@@ -61,7 +58,8 @@ public class RecursoQueryAdapter implements RecursoQueryPort {
                 response.facultad(),
                 response.ubicacion(),
                 response.aforoMaximo(),
-                response.plazoDevolucion());
+                response.plazoDevolucion(),
+                response.fechaRegistro());
     }
 
     private RecursoDetalleView toView(RecursoDetalleResponse response) {

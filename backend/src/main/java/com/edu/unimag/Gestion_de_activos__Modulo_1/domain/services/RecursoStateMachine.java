@@ -38,15 +38,23 @@ public final class RecursoStateMachine {
             return false;
         }
 
-        return switch (nuevo) {
-            case EN_USO -> actual == EstadoDisponibilidadRecurso.DISPONIBLE
-                    || actual == EstadoDisponibilidadRecurso.RESERVADO;
-            case DISPONIBLE -> actual == EstadoDisponibilidadRecurso.EN_USO
-                    || actual == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO
-                    || actual == EstadoDisponibilidadRecurso.RESERVADO
-                    || actual == EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO;
-            case EN_MANTENIMIENTO -> true;
-            case RESERVADO, BLOQUEO_ACADEMICO -> actual == EstadoDisponibilidadRecurso.DISPONIBLE;
+        return switch (actual) {
+            // Un recurso disponible puede empezar a usarse, reservarse, bloquearse o
+            // enviarse a mantenimiento.
+            case DISPONIBLE -> nuevo == EstadoDisponibilidadRecurso.EN_USO
+                    || nuevo == EstadoDisponibilidadRecurso.RESERVADO
+                    || nuevo == EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO
+                    || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
+            // Al finalizar el uso solo puede liberarse o pasar a mantenimiento.
+            case EN_USO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE
+                    || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
+            case RESERVADO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE
+                    || nuevo == EstadoDisponibilidadRecurso.EN_USO
+                    || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
+            case BLOQUEO_ACADEMICO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE;
+            // Salir de mantenimiento exige una revisión técnica intermedia que no
+            // puede resolverse con una transición directa a DISPONIBLE.
+            case EN_MANTENIMIENTO -> false;
         };
     }
 }
