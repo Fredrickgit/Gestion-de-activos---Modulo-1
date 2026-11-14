@@ -124,4 +124,9 @@ public class ActivoRepositoryImpl implements ActivoRepository {
     public boolean existsByCodigo(String codigo) {
         return jpaRepository.existsByCodigo(codigo);
     }
+
+    @Override
+    public int marcarBaja(UUID id) {
+        return jpaRepository.marcarBaja(id);
+    }
 }

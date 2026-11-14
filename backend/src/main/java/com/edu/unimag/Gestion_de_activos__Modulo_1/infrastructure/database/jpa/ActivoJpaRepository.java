@@ -5,6 +5,7 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.model
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -44,4 +45,8 @@ public interface ActivoJpaRepository extends JpaRepository<Activo, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Activo a WHERE a.id = :id")
     Optional<Activo> findByIdForUpdate(@Param("id") UUID id);
+
+    @Modifying
+    @Query("UPDATE Activo a SET a.dadoDeBaja = true WHERE a.id = :id")
+    int marcarBaja(@Param("id") UUID id);
 }

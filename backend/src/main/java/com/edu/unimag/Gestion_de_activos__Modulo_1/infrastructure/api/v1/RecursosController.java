@@ -1,6 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.v1;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarEstadoCommand;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GestionRecursos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ActualizarEstadoRequest;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.DisponibilidadResponse;
@@ -52,13 +53,15 @@ public class RecursosController {
 
         RecursoSchemas.FacultadCriteria facultadCriteria = RecursoSchemas.parseFacultad(facultad);
 
-        return mapper.toPage(gestionRecursos.listar(
+        RecursoFiltro filtro = new RecursoFiltro(
                 RecursoSchemas.parseTipo(tipo),
                 RecursoSchemas.parseEstado(estado),
                 facultadCriteria.id(),
                 facultadCriteria.nombre(),
-                page,
-                size));
+                null,
+                null);
+
+        return mapper.toPage(gestionRecursos.listar(filtro, page, size));
     }
 
     @GetMapping("/{id}")
@@ -68,7 +71,7 @@ public class RecursosController {
 
     @GetMapping("/{id}/disponibilidad")
     public DisponibilidadResponse disponibilidad(@PathVariable UUID id) {
-        return mapper.toDisponibilidad(gestionRecursos.disponibilidad(id));
+        return mapper.toDisponibilidad(gestionRecursos.disponibilidad(id, null));
     }
 
     @PatchMapping("/{id}/estado")

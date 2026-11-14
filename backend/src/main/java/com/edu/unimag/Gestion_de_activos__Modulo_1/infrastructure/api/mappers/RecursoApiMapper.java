@@ -78,6 +78,7 @@ public class RecursoApiMapper {
                 view.facultad(),
                 view.ubicacion(),
                 view.aforoMaximo(),
-                view.plazoDevolucion());
+                view.plazoDevolucion(),
+                view.fechaRegistro());
     }
 }

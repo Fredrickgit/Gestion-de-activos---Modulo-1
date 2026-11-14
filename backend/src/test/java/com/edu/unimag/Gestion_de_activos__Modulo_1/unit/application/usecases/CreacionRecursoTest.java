@@ -1,4 +1,4 @@
-package com.edu.unimag.Gestion_de_activos__Modulo_1.mock.applications;
+package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.application.usecases;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.CrearActivoInput;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.CrearEspacioInput;
