@@ -1,0 +1,17 @@
+# Archivos que no deben enviarse al contexto de build de Docker
+target/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+
+# El wrapper no se usa dentro de la imagen (se usa la imagen oficial de Maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Los tests no se compilan ni ejecutan en la imagen de despliegue
+src/test/
+documentation/
+specs/

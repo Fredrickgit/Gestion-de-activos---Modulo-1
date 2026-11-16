@@ -23,6 +23,7 @@ public class EspacioMapper {
                 .facultadId(model.getFacultadId())
                 .disponibilidadId(model.getDisponibilidadId())
                 .ubicacionId(model.getUbicacionId())
+                .equipamiento(model.getEquipamiento())
                 .build();
     }
 
@@ -42,7 +43,9 @@ public class EspacioMapper {
                 .facultadId(domain.getFacultadId())
                 .disponibilidadId(domain.getDisponibilidadId())
                 .ubicacionId(domain.getUbicacionId())
-                .equipamiento(new ArrayList<>())
+                .equipamiento(domain.getEquipamiento() == null
+                        ? new ArrayList<>()
+                        : new ArrayList<>(domain.getEquipamiento()))
                 .build();
     }
 }

@@ -1,13 +1,16 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.v1;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarEstadoCommand;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GestionRecursos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ActualizarEstadoRequest;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.DisponibilidadResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.EstadoActualizadoResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.PageResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.RecursoDetalleResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.RecursoResumenResponse;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.mappers.RecursoApiMapper;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.schemas.RecursoSchemas;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.service.RecursoApiService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -31,10 +34,12 @@ import java.util.UUID;
 @Validated
 public class RecursosController {
 
-    private final RecursoApiService recursoApiService;
+    private final GestionRecursos gestionRecursos;
+    private final RecursoApiMapper mapper;
 
-    public RecursosController(RecursoApiService recursoApiService) {
-        this.recursoApiService = recursoApiService;
+    public RecursosController(GestionRecursos gestionRecursos, RecursoApiMapper mapper) {
+        this.gestionRecursos = gestionRecursos;
+        this.mapper = mapper;
     }
 
     @GetMapping
@@ -48,23 +53,25 @@ public class RecursosController {
 
         RecursoSchemas.FacultadCriteria facultadCriteria = RecursoSchemas.parseFacultad(facultad);
 
-        return recursoApiService.listar(
+        RecursoFiltro filtro = new RecursoFiltro(
                 RecursoSchemas.parseTipo(tipo),
                 RecursoSchemas.parseEstado(estado),
                 facultadCriteria.id(),
                 facultadCriteria.nombre(),
-                page,
-                size);
+                null,
+                null);
+
+        return mapper.toPage(gestionRecursos.listar(filtro, page, size));
     }
 
     @GetMapping("/{id}")
     public RecursoDetalleResponse obtener(@PathVariable UUID id) {
-        return recursoApiService.obtener(id);
+        return mapper.toDetalle(gestionRecursos.obtener(id));
     }
 
     @GetMapping("/{id}/disponibilidad")
     public DisponibilidadResponse disponibilidad(@PathVariable UUID id) {
-        return recursoApiService.disponibilidad(id);
+        return mapper.toDisponibilidad(gestionRecursos.disponibilidad(id, null));
     }
 
     @PatchMapping("/{id}/estado")
@@ -73,6 +80,12 @@ public class RecursosController {
             @Valid @RequestBody ActualizarEstadoRequest request,
             @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId) {
 
-        return recursoApiService.actualizarEstado(id, request, correlationId);
+        return mapper.toEstadoActualizado(gestionRecursos.actualizarEstado(
+                id,
+                new ActualizarEstadoCommand(
+                        request.nuevoEstado(),
+                        request.motivo(),
+                        request.usuarioResponsable()),
+                correlationId));
     }
 }

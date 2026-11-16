@@ -13,6 +13,8 @@ public interface EspacioRepository {
 
     Optional<Espacio> findById(UUID id);
 
+    Optional<Espacio> findByIdForUpdate(UUID id);
+
     List<Espacio> findAll();
 
     boolean existsById(UUID id);

@@ -22,11 +22,12 @@ public class Activo {
     private final UUID disponibilidadId;
     private final UUID espacioId;
     private final UUID tipoActivoId;
+    private final int plazoDevolucion;
 
     @Builder
     public Activo(UUID id, String nombre, String codigo, CategoriaRecurso categoria,
                   UUID estadoFisicoId, UUID disponibilidadId, UUID espacioId,
-                  UUID tipoActivoId) {
+                  UUID tipoActivoId, int plazoDevolucion) {
         this.id = id;
         this.nombre = Name.of(nombre, "El nombre del activo es obligatorio");
         this.codigo = Code.of(codigo, "El codigo del activo es obligatorio");
@@ -47,6 +48,18 @@ public class Activo {
         this.disponibilidadId = disponibilidadId;
         this.espacioId = espacioId;
         this.tipoActivoId = tipoActivoId;
+        this.plazoDevolucion = plazoDevolucion;
+    }
+
+    public Activo(UUID id, String nombre, String codigo, CategoriaRecurso categoria,
+                  UUID estadoFisicoId, UUID disponibilidadId, UUID espacioId,
+                  UUID tipoActivoId) {
+        this(id, nombre, codigo, categoria, estadoFisicoId, disponibilidadId, espacioId, tipoActivoId, 0);
+    }
+
+    public Activo conDisponibilidad(UUID nuevaDisponibilidadId) {
+        return new Activo(id, getNombre(), getCodigo(), categoria, estadoFisicoId,
+                nuevaDisponibilidadId, espacioId, tipoActivoId, plazoDevolucion);
     }
 
     public String getNombre() {

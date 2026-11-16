@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -55,6 +56,14 @@ public class Activo {
 
     @Column(name = "tipo_activo_id", nullable = false)
     private UUID tipoActivoId;
+
+    // La fecha la asigna la base de datos (DEFAULT now()).
+    @Column(name = "fecha_registro", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime fechaRegistro;
+
+    @Column(name = "dado_de_baja", nullable = false)
+    @Builder.Default
+    private boolean dadoDeBaja = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "espacio_id")

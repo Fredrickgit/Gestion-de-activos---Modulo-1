@@ -19,6 +19,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -66,6 +67,14 @@ public class Espacio {
 
     @Column(name = "disponibilidad_id", nullable = false)
     private UUID disponibilidadId;
+
+    // La fecha la asigna la base de datos (DEFAULT now()).
+    @Column(name = "fecha_registro", nullable = false, insertable = false, updatable = false)
+    private LocalDateTime fechaRegistro;
+
+    @Column(name = "dado_de_baja", nullable = false)
+    @Builder.Default
+    private boolean dadoDeBaja = false;
 
     @OneToMany(mappedBy = "espacio", fetch = FetchType.LAZY)
     @Builder.Default

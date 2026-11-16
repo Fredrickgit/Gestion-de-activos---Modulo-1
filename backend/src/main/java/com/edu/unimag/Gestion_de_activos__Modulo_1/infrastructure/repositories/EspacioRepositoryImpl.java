@@ -25,13 +25,21 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     @Override
     public Espacio save(Espacio entity) {
         var model = mapper.toModel(entity);
-        var saved = jpaRepository.save(model);
+        // saveAndFlush: la lectura CQRS posterior (JDBC, misma transacción)
+        // debe ver la fila recién insertada. Con save() el INSERT podía
+        // ejecutarse recién en el commit y la creación devolvía 404.
+        var saved = jpaRepository.saveAndFlush(model);
         return mapper.toDomain(saved);
     }
 
     @Override
     public Optional<Espacio> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<Espacio> findByIdForUpdate(UUID id) {
+        return jpaRepository.findByIdForUpdate(id).map(mapper::toDomain);
     }
 
     @Override

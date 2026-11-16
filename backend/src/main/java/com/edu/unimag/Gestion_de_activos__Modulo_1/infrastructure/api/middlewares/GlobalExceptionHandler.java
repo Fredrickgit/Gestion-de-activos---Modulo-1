@@ -1,13 +1,14 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ErrorResponse;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.ConflictoValidacionExternaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.EntidadRelacionadaInvalidaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.EstadoSinCambioException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.RecursoDuplicadoException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.RecursoNoEncontradoException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.SolicitudInvalidaException;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.TransicionEstadoInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.ConflictoValidacionExternaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.EntidadRelacionadaInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.RecursoDuplicadoException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.RecursoNoEncontradoException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.SolicitudInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.EstadoSinCambioException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.TransicionEstadoInvalidaException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -18,10 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -74,6 +77,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntidadRelacionadaInvalidaException.class)
     public ResponseEntity<ErrorResponse> handleEntidadInvalida(EntidadRelacionadaInvalidaException ex,
                                                                HttpServletRequest request) {
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomain(DomainException ex,
+                                                      HttpServletRequest request) {
         return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
@@ -160,6 +169,28 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT,
                 "La operación viola una restricción de integridad de datos (registro duplicado o referencia inválida).",
                 request);
+    }
+
+    /**
+     * Rutas inexistentes. Sin este manejador, Spring las trata como recursos
+     * estáticos y el handler genérico devolvía 500 en lugar del 404 de REST.md.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRutaNoEncontrada(NoResourceFoundException ex,
+                                                                HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND,
+                "No se encontró el recurso o endpoint solicitado.", request);
+    }
+
+    /**
+     * Método HTTP no soportado por el endpoint (por ejemplo POST donde solo se
+     * admite PATCH). El contrato exige 405, no 500.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMetodoNoSoportado(HttpRequestMethodNotSupportedException ex,
+                                                                 HttpServletRequest request) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED,
+                "El método HTTP '" + ex.getMethod() + "' no está soportado para este endpoint.", request);
     }
 
     @ExceptionHandler(Exception.class)

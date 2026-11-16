@@ -1,7 +1,7 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.schemas;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
-import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.middlewares.exceptions.SolicitudInvalidaException;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.SolicitudInvalidaException;
 
 import java.util.Locale;
 import java.util.UUID;

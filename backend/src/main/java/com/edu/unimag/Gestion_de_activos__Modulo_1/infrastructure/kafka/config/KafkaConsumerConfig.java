@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -22,8 +21,6 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.ExponentialBackOff;
 
 import java.net.SocketTimeoutException;
@@ -42,6 +39,9 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id:m1-activos-consumer-group}")
     private String groupId;
 
+    @Value("${spring.kafka.listener.auto-startup:true}")
+    private boolean listenerAutoStartup;
+
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -50,28 +50,31 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        // Los payloads se reciben como texto y se deserializan explícitamente con
+        // ObjectMapper en cada listener. Esto evita depender de trusted.packages.
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ProducerFactory<String, Object> producerFactory() {
+    public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        // El valor ya viaja como JSON serializado (String), de modo que el DLT
+        // conserva el payload original sin volver a entrecomillarlo.
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
-    public KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
+    public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
-    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(KafkaTemplate<String, Object> kafkaTemplate) {
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(KafkaTemplate<String, String> kafkaTemplate) {
         return new DeadLetterPublishingRecoverer(kafkaTemplate, (record, exception) -> {
             log.error("Enviando mensaje al DLT '{}' para topic '{}', partición {}, offset {}, key '{}'. Causa: {}",
                     KafkaTopics.DLT_TOPIC, record.topic(), record.partition(), record.offset(), record.key(), exception.getMessage());
@@ -89,13 +92,18 @@ public class KafkaConsumerConfig {
         errorHandler.addNotRetryableExceptions(
                 IllegalArgumentException.class,
                 IllegalStateException.class,
-                com.fasterxml.jackson.core.JsonProcessingException.class
+                com.fasterxml.jackson.core.JsonProcessingException.class,
+                com.edu.unimag.Gestion_de_activos__Modulo_1.domain.exceptions.DomainException.class,
+                com.edu.unimag.Gestion_de_activos__Modulo_1.application.exceptions.ApplicationException.class
         );
 
+        // Solo los fallos realmente transitorios se reintentan. DataAccessException
+        // es demasiado amplio e incluiría violaciones de integridad no recuperables.
         errorHandler.addRetryableExceptions(
                 TransientDataAccessException.class,
-                SocketTimeoutException.class,
-                DataAccessException.class
+                org.springframework.dao.QueryTimeoutException.class,
+                org.springframework.dao.CannotAcquireLockException.class,
+                SocketTimeoutException.class
         );
 
         return errorHandler;
@@ -111,6 +119,7 @@ public class KafkaConsumerConfig {
         factory.setConsumerFactory(consumerFactory);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         factory.setCommonErrorHandler(defaultErrorHandler);
+        factory.setAutoStartup(listenerAutoStartup);
 
         return factory;
     }
@@ -126,6 +135,7 @@ public class KafkaConsumerConfig {
         factory.setConcurrency(3);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
         factory.setCommonErrorHandler(defaultErrorHandler);
+        factory.setAutoStartup(listenerAutoStartup);
 
         return factory;
     }

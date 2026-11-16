@@ -8,12 +8,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	@Bean
 	@ServiceConnection
 	KafkaContainer kafkaContainer() {
-		return new KafkaContainer(DockerImageName.parse("apache/kafka-native:latest"));
+		// JVM image avoids native-image crashes on some Docker hosts.
+		return new KafkaContainer(DockerImageName.parse("apache/kafka:4.0.0"));
 	}
 
 	@Bean
