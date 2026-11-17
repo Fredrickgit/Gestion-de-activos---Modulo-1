@@ -67,6 +67,10 @@ public class RecursoApiMapper {
                 view.timestamp());
     }
 
+    public RecursoResumenResponse toResumenPublico(RecursoResumenView view) {
+        return toResumen(view);
+    }
+
     private RecursoResumenResponse toResumen(RecursoResumenView view) {
         return new RecursoResumenResponse(
                 view.id(),
@@ -79,6 +83,7 @@ public class RecursoApiMapper {
                 view.ubicacion(),
                 view.aforoMaximo(),
                 view.plazoDevolucion(),
-                view.fechaRegistro());
+                view.fechaRegistro(),
+                view.tipoActivo());
     }
 }

@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
-import type { Resource } from '@/types';
+import type { Resource, ResourceHistoryEntry } from '@/types';
 import { formatLongDate } from '@/lib/format';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -8,12 +9,37 @@ interface HistoryModalProps {
   open: boolean;
   resource: Resource | null;
   onClose: () => void;
+  loadHistory: (id: string) => Promise<ResourceHistoryEntry[]>;
 }
 
-export function HistoryModal({ open, resource, onClose }: HistoryModalProps) {
-  if (!resource) return null;
+export function HistoryModal({ open, resource, onClose, loadHistory }: HistoryModalProps) {
+  const [entries, setEntries] = useState<ResourceHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const entries = [...resource.history].reverse();
+  useEffect(() => {
+    if (!open || !resource) return;
+    let active = true;
+    setLoading(true);
+    setError(null);
+    loadHistory(resource.id)
+      .then((history) => {
+        if (active) setEntries(history);
+      })
+      .catch((cause) => {
+        if (active) {
+          setError(cause instanceof Error ? cause.message : 'No fue posible cargar el historial.');
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, resource, loadHistory]);
+
+  if (!resource) return null;
 
   return (
     <Modal
@@ -23,7 +49,11 @@ export function HistoryModal({ open, resource, onClose }: HistoryModalProps) {
       description={`${resource.name} · ${resource.id}`}
       size="lg"
     >
-      {entries.length === 0 ? (
+      {loading ? (
+        <p className="py-8 text-center text-sm text-muted">Cargando historial...</p>
+      ) : error ? (
+        <p className="py-8 text-center text-sm text-danger">{error}</p>
+      ) : entries.length === 0 ? (
         <EmptyState
           icon={<History className="h-6 w-6" aria-hidden />}
           title="Sin movimientos registrados"

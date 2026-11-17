@@ -1,11 +1,14 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.v1;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarEstadoCommand;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarRecursoCommand;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GestionRecursos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ActualizarEstadoRequest;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.ActualizarRecursoRequest;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.DisponibilidadResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.EstadoActualizadoResponse;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.HistorialRecursoResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.PageResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.RecursoDetalleResponse;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.dtos.RecursoResumenResponse;
@@ -15,6 +18,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,8 +27,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -72,6 +79,41 @@ public class RecursosController {
     @GetMapping("/{id}/disponibilidad")
     public DisponibilidadResponse disponibilidad(@PathVariable UUID id) {
         return mapper.toDisponibilidad(gestionRecursos.disponibilidad(id, null));
+    }
+
+    @GetMapping("/{id}/historial")
+    public List<HistorialRecursoResponse> historial(@PathVariable UUID id) {
+        return gestionRecursos.historial(id).stream()
+                .map(entry -> new HistorialRecursoResponse(
+                        entry.id(),
+                        entry.recursoId(),
+                        entry.estadoAnterior(),
+                        entry.estadoNuevo(),
+                        entry.usuarioResponsable(),
+                        entry.fechaEvento(),
+                        entry.motivo()))
+                .toList();
+    }
+
+    @PatchMapping("/{id}")
+    public RecursoDetalleResponse actualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ActualizarRecursoRequest request) {
+        return mapper.toDetalle(gestionRecursos.actualizar(id, new ActualizarRecursoCommand(
+                request.nombre(),
+                request.estadoFisico(),
+                request.plazoDevolucion(),
+                request.aforoMaximo(),
+                request.ubicacionId(),
+                request.facultadId(),
+                request.tipoActivoId(),
+                request.equipamiento())));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void eliminar(@PathVariable UUID id) {
+        gestionRecursos.eliminar(id);
     }
 
     @PatchMapping("/{id}/estado")

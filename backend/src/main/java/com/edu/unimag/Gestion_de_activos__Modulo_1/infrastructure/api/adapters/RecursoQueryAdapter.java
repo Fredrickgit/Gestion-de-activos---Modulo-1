@@ -59,7 +59,8 @@ public class RecursoQueryAdapter implements RecursoQueryPort {
                 response.ubicacion(),
                 response.aforoMaximo(),
                 response.plazoDevolucion(),
-                response.fechaRegistro());
+                response.fechaRegistro(),
+                response.tipoActivo());
     }
 
     private RecursoDetalleView toView(RecursoDetalleResponse response) {

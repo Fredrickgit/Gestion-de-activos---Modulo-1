@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Resource, ResourceInput, ResourceStatus } from '@/types';
-import { ASSET_CATEGORIES, MAX_TERMS, SPACE_CATEGORIES } from '@/data/catalog';
+import { MAX_TERMS } from '@/data/catalog';
 import { CONDITION_OPTIONS, STATUS_OPTIONS } from '@/constants/status';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { SelectField, TextField } from '@/components/ui/Fields';
+import { useCatalogs } from '@/context/CatalogsContext';
+import { useResources } from '@/context/ResourcesContext';
 
 interface EditResourceModalProps {
   open: boolean;
@@ -15,10 +17,10 @@ interface EditResourceModalProps {
 
 interface EditForm {
   name: string;
-  location: string;
+  ubicacionId: string;
   category: string;
   condition: string;
-  faculty: string;
+  facultadId: string;
   capacity: string;
   maxTerm: string;
   status: ResourceStatus;
@@ -31,6 +33,8 @@ export function EditResourceModal({
   onClose,
   onSave,
 }: EditResourceModalProps) {
+  const { catalogs } = useCatalogs();
+  const { resources } = useResources();
   const [form, setForm] = useState<EditForm | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -39,23 +43,49 @@ export function EditResourceModal({
       setForm(null);
       return;
     }
+    const space = resources.find(
+      (item) =>
+        item.kind === 'espacio' &&
+        (item.name === resource.location ||
+          `${item.id} · ${item.name}` === resource.location),
+    );
+    const ubicacion = catalogs.ubicaciones.find(
+      (item) => item.nombre === resource.location,
+    );
+    const facultad = catalogs.facultades.find(
+      (item) => item.nombre === resource.faculty,
+    );
+
     setForm({
       name: resource.name,
-      location: resource.location,
+      ubicacionId: space?.uuid ?? ubicacion?.id ?? '',
       category: resource.category,
       condition: resource.condition,
-      faculty: resource.faculty,
+      facultadId: facultad?.id ?? '',
       capacity: resource.capacity ? String(resource.capacity) : '',
       maxTerm: resource.maxTerm,
       status: resource.status,
       responsible: resource.responsible,
     });
     setErrors({});
-  }, [resource, open]);
+  }, [resource, open, resources, catalogs]);
 
   if (!resource || !form) {
     return null;
   }
+
+  const isActivo = resource.kind === 'activo';
+  const spaces = resources.filter((item) => item.kind === 'espacio' && item.uuid);
+  const locationOptions = isActivo
+    ? spaces.map((item) => ({
+        value: item.uuid as string,
+        label: `${item.id} · ${item.name}`,
+      }))
+    : catalogs.ubicaciones.map((item) => ({ value: item.id, label: item.nombre }));
+  const facultyOptions = catalogs.facultades.map((item) => ({
+    value: item.id,
+    label: item.nombre,
+  }));
 
   const setField = <K extends keyof EditForm>(key: K, value: EditForm[K]) => {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -72,7 +102,7 @@ export function EditResourceModal({
     const nextErrors: Record<string, string> = {};
 
     if (!form.name.trim()) nextErrors.name = 'El nombre del recurso es obligatorio.';
-    if (!form.location.trim()) nextErrors.location = 'La ubicación es obligatoria.';
+    if (!form.ubicacionId) nextErrors.ubicacionId = 'La ubicación es obligatoria.';
     if (!form.category) nextErrors.category = 'Seleccione una categoría.';
 
     if (Object.keys(nextErrors).length > 0) {
@@ -80,13 +110,31 @@ export function EditResourceModal({
       return;
     }
 
+    let locationName = resource.location;
+    if (isActivo) {
+      const space = spaces.find((item) => item.uuid === form.ubicacionId);
+      if (space) locationName = `${space.id} · ${space.name}`;
+    } else {
+      const ubicacion = catalogs.ubicaciones.find((item) => item.id === form.ubicacionId);
+      if (ubicacion) locationName = ubicacion.nombre;
+    }
+    const facultyLabel = catalogs.facultades.find(
+      (item) => item.id === form.facultadId,
+    );
+    const tipoActivo = catalogs.tiposActivo.find(
+      (item) => item.nombre === form.category,
+    );
+
     onSave({
       name: form.name.trim(),
-      location: form.location.trim(),
+      location: locationName,
+      ubicacionId: form.ubicacionId,
       category: form.category,
       condition: form.condition,
-      faculty: form.faculty,
-      capacity: resource.kind === 'espacio' ? Number(form.capacity) || undefined : undefined,
+      faculty: facultyLabel?.nombre ?? resource.faculty,
+      facultadId: form.facultadId || undefined,
+      tipoActivoId: isActivo ? tipoActivo?.id : undefined,
+      capacity: isActivo ? undefined : Number(form.capacity) || undefined,
       maxTerm: form.maxTerm,
       status: form.status,
       responsible: form.responsible.trim() || 'Sin asignar',
@@ -121,25 +169,38 @@ export function EditResourceModal({
           fieldClassName="sm:col-span-2"
           placeholder="Nombre del recurso"
         />
-        <TextField
-          label="Ubicación"
+        <SelectField
+          label={isActivo ? 'Espacio / ubicación' : 'Ubicación'}
           required
-          value={form.location}
-          onChange={(value) => setField('location', value)}
-          error={errors.location}
+          value={form.ubicacionId}
+          onChange={(value) => setField('ubicacionId', value)}
+          options={locationOptions}
+          placeholder="Seleccione una ubicación..."
+          error={errors.ubicacionId}
           fieldClassName="sm:col-span-2"
         />
         <SelectField
-          label={resource.kind === 'activo' ? 'Tipo de activo' : 'Categoría del espacio'}
-          required
+          label={isActivo ? 'Tipo de activo' : 'Categoría del espacio'}
           value={form.category}
           onChange={(value) => setField('category', value)}
-          options={(resource.kind === 'activo' ? ASSET_CATEGORIES : SPACE_CATEGORIES).map(
-            (category) => ({ value: category, label: category }),
-          )}
+          disabled={!isActivo}
+          helper={isActivo ? undefined : 'La categoría se define al registrar el espacio.'}
+          options={
+            isActivo
+              ? [
+                  ...catalogs.tiposActivo.map((item) => ({
+                    value: item.nombre,
+                    label: item.nombre,
+                  })),
+                  ...(catalogs.tiposActivo.some((item) => item.nombre === form.category)
+                    ? []
+                    : [{ value: form.category, label: form.category }]),
+                ]
+              : [{ value: form.category, label: form.category }]
+          }
           error={errors.category}
         />
-        {resource.kind === 'activo' ? (
+        {isActivo ? (
           <SelectField
             label="Condición física"
             value={form.condition}
@@ -168,6 +229,14 @@ export function EditResourceModal({
           value={form.status}
           onChange={(value) => setField('status', value as ResourceStatus)}
           options={STATUS_OPTIONS}
+        />
+        <SelectField
+          label="Facultad"
+          value={form.facultadId}
+          onChange={(value) => setField('facultadId', value)}
+          options={facultyOptions}
+          placeholder="Seleccione una facultad..."
+          fieldClassName="sm:col-span-2"
         />
         <TextField
           label="Responsable"

@@ -1,5 +1,6 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.infrastructure.config;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.ConsultarCatalogos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GestionRecursos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.config.JacksonConfig;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.api.mappers.RecursoApiMapper;
@@ -52,6 +53,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private RecursoApiMapper recursoApiMapper;
+
+    @MockitoBean
+    private ConsultarCatalogos consultarCatalogos;
 
     @Test
     void peticionSinCredencialesDevuelve401Json() throws Exception {

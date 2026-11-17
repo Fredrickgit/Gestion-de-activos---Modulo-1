@@ -54,7 +54,7 @@ class RecursoApiMapperTest {
     void toPage() {
         UUID id = UUID.randomUUID();
         RecursoResumenView resumen = new RecursoResumenView(
-                id, "ACT-001", "Microscopio #5", "ACTIVO", "DISPONIBLE", "OPTIMO", "Facultad", "Lab", 10, 30, null);
+                id, "ACT-001", "Microscopio #5", "ACTIVO", "DISPONIBLE", "OPTIMO", "Facultad", "Lab", 10, 30, null, null);
         PaginaView<RecursoResumenView> pagina = new PaginaView<>(List.of(resumen), 2, 20, 45);
 
         PageResponse<RecursoResumenResponse> response = mapper.toPage(pagina);

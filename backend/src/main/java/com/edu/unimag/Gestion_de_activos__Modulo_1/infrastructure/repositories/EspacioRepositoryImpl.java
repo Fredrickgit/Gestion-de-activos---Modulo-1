@@ -77,6 +77,11 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     }
 
     @Override
+    public int marcarBaja(UUID id) {
+        return jpaRepository.marcarBaja(id);
+    }
+
+    @Override
     public List<Espacio> findByCategoria(CategoriaRecurso categoria) {
         return jpaRepository.findByCategoria(categoria).stream()
                 .map(mapper::toDomain)

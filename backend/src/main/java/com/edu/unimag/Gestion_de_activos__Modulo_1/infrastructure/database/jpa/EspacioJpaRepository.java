@@ -5,6 +5,7 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.model
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -46,4 +47,8 @@ public interface EspacioJpaRepository extends JpaRepository<Espacio, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Espacio e WHERE e.id = :id")
     Optional<Espacio> findByIdForUpdate(@Param("id") UUID id);
+
+    @Modifying
+    @Query("UPDATE Espacio e SET e.dadoDeBaja = true WHERE e.id = :id")
+    int marcarBaja(@Param("id") UUID id);
 }

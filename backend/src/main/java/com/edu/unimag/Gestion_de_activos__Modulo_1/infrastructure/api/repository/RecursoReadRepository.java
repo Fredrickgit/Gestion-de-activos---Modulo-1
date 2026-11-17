@@ -46,13 +46,15 @@ public class RecursoReadRepository {
                    a.plazo_devolucion AS plazo_devolucion,
                    NULL::integer AS aforo_maximo,
                    NULL::jsonb AS equipamiento,
-                   a.fecha_registro AS fecha_registro
+                   a.fecha_registro AS fecha_registro,
+                   ta.nombre AS tipo_activo
             FROM activo a
             LEFT JOIN espacio e ON e.id = a.espacio_id
             LEFT JOIN facultad f ON f.id = e.facultad_id
             LEFT JOIN ubicacion u ON u.id = e.ubicacion_id
             LEFT JOIN estado_disponibilidad ed ON ed.id = a.disponibilidad_id
             LEFT JOIN estado_activo ea ON ea.id = a.estado_fisico_id
+            LEFT JOIN tipo_activo ta ON ta.id = a.tipo_activo_id
             WHERE a.dado_de_baja = FALSE
               AND (CAST(:tipo AS text) IS NULL OR CAST(:tipo AS text) = 'ACTIVO')
               AND (CAST(:estado AS text) IS NULL OR ed.disponibilidad = CAST(:estado AS text))
@@ -75,7 +77,8 @@ public class RecursoReadRepository {
                    e.plazo_devolucion AS plazo_devolucion,
                    e.aforo_maximo AS aforo_maximo,
                    e.equipamiento AS equipamiento,
-                   e.fecha_registro AS fecha_registro
+                   e.fecha_registro AS fecha_registro,
+                   NULL::varchar AS tipo_activo
             FROM espacio e
             LEFT JOIN facultad f ON f.id = e.facultad_id
             LEFT JOIN ubicacion u ON u.id = e.ubicacion_id
@@ -214,7 +217,8 @@ public class RecursoReadRepository {
                 rs.getString("ubicacion"),
                 getInteger(rs, "aforo_maximo"),
                 getInteger(rs, "plazo_devolucion"),
-                rs.getObject("fecha_registro", LocalDateTime.class));
+                rs.getObject("fecha_registro", LocalDateTime.class),
+                rs.getString("tipo_activo"));
     }
 
     private RowMapper<RecursoDetalleResponse> detalleRowMapper() {

@@ -1,13 +1,19 @@
 import { SUMMARY_STATUSES } from '@/constants/status';
-import type { ResourceStatus } from '@/types';
+import type { Resource, ResourceStatus } from '@/types';
 import { cn } from '@/lib/cn';
 
 interface StatusSummaryProps {
   value: ResourceStatus | 'todos';
   onChange: (value: ResourceStatus | 'todos') => void;
+  resources: Resource[];
 }
 
-export function StatusSummary({ value, onChange }: StatusSummaryProps) {
+export function StatusSummary({ value, onChange, resources }: StatusSummaryProps) {
+  const counts = resources.reduce<Record<string, number>>((acc, resource) => {
+    acc[resource.status] = (acc[resource.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
   return (
     <div className="rounded-[10px] border border-line bg-white p-4">
       <div className="flex items-center justify-between gap-3">
@@ -45,7 +51,7 @@ export function StatusSummary({ value, onChange }: StatusSummaryProps) {
                   : 'text-muted hover:bg-white/70 hover:text-ink',
               )}
             >
-              {item.label}: {item.count}
+              {item.label}: {counts[item.status] ?? 0}
             </button>
           );
         })}

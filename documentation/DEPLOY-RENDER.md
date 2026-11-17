@@ -52,11 +52,11 @@ evitar la conversión, define `DB_URL` ya en formato JDBC (tiene prioridad).
 3. Flujo Gitflow del proyecto: trabajar en `feature/*`, PR hacia `develop`.
    No hacer push directo a `main` ni a `develop`.
 
-> **Estado actual:** el backend de `feature/application` compila correctamente y
-> la suite pasa con `./mvnw clean test` (157 tests). Incluye Flyway, outbox,
-> seguridad HTTP Basic con roles, corrección de lectura tras escritura y
-> Dockerfile listo para Render. Antes de desplegar, verifica siempre que la rama
-> seleccionada pase tests y build.
+> **Estado actual:** el backend compila correctamente y la suite pasa con
+> `./mvnw test` (173 tests). Incluye Flyway, outbox, seguridad HTTP Basic con
+> roles, corrección de lectura tras escritura y Dockerfile listo para Render.
+> Antes de desplegar, verifica siempre que la rama seleccionada pase tests y
+> build.
 
 ---
 
@@ -69,12 +69,14 @@ El archivo `render.yaml` ya está en la raíz del repositorio.
    esté listo el merge).
 3. Render crea:
    - Base de datos PostgreSQL gratuita `gestion-activos-db`.
-   - Servicio web Docker `gestion-activos-m1`.
-4. Cuando lo solicite, define:
-   - `SECURITY_USER`
-   - `SECURITY_PASSWORD`
-5. Espera el primer build (puede tardar varios minutos).
-6. Abre `https://<nombre>.onrender.com`.
+   - Servicio web Docker `gestion-activos-m1` (backend).
+   - Sitio estático `gestion-activos-frontend` (frontend Vite).
+4. Cuando lo solicite, define las cuatro credenciales:
+   - `SECURITY_USER` y `SECURITY_PASSWORD` (backend).
+   - `VITE_API_USERNAME` y `VITE_API_PASSWORD` (frontend, **los mismos valores**).
+5. Espera el primer build del backend y del frontend.
+6. Abre `https://gestion-activos-frontend.onrender.com` (o la URL real que
+   muestre Render).
 
 Las variables de base de datos (`DB_HOST`, `DB_PORT`, `DB_NAME`,
 `DB_USERNAME`, `DB_PASSWORD`) se inyectan automáticamente desde la base de
@@ -244,8 +246,61 @@ docker run --rm -p 10000:10000 \
 
 ## 9. Orden recomendado de trabajo
 
-1. Ejecutar `cd backend && ./mvnw clean test` y confirmar que pasa (157 tests).
+1. Ejecutar `cd backend && ./mvnw test` y confirmar que pasa.
 2. Abrir PR de `feature/application` → `develop` y mergear.
 3. Crear el Blueprint o el Web Service en Render apuntando a `develop`.
 4. Configurar `SECURITY_USER`/`SECURITY_PASSWORD`.
 5. Verificar `/api/v1/recursos` con `curl`.
+6. En el servicio estático del frontend, configurar `VITE_API_USERNAME` y
+   `VITE_API_PASSWORD` con las mismas credenciales.
+7. Verificar que `CORS_ALLOWED_ORIGINS` del backend incluya el dominio del
+   frontend (`https://gestion-activos-frontend.onrender.com` en el Blueprint).
+
+---
+
+## 10. Frontend en Render
+
+El `render.yaml` incluye el servicio estático `gestion-activos-frontend`:
+
+| Campo | Valor |
+| --- | --- |
+| Runtime | Static |
+| Build Command | `cd frontend && npm ci && npm run build` |
+| Publish Path | `frontend/dist` |
+| Rewrite | `/*` → `/index.html` |
+
+Variables del frontend:
+
+```
+VITE_API_BASE_URL=https://gestion-activos-m1.onrender.com/api/v1
+VITE_API_USERNAME=<SECURITY_USER>
+VITE_API_PASSWORD=<SECURITY_PASSWORD>
+VITE_API_TIMEOUT_MS=60000
+VITE_DEMO_MODE=false
+```
+
+> Las variables `VITE_*` se incorporan al bundle en tiempo de build. Las
+> credenciales HTTP Basic son visibles para cualquier usuario del sitio. Para
+> producción se recomienda añadir login con token o un proxy BFF.
+
+### Endpoints nuevos usados por el frontend
+
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| `GET` | `/api/v1/catalogos` | Facultades, ubicaciones, tipos y estados |
+| `GET` | `/api/v1/recursos/{id}/historial` | Historial de cambios |
+| `GET` | `/api/v1/reportes` | Reporte paginado de inventario |
+| `PATCH` | `/api/v1/recursos/{id}` | Edición de ficha |
+| `DELETE` | `/api/v1/recursos/{id}` | Baja lógica |
+
+### Prueba local contra Render
+
+```bash
+cd frontend
+cp .env.example .env
+# completa VITE_API_USERNAME y VITE_API_PASSWORD
+npm run dev
+```
+
+Si `VITE_API_BASE_URL` queda vacío, la app funciona en modo demo con los datos
+en memoria de `src/data`.

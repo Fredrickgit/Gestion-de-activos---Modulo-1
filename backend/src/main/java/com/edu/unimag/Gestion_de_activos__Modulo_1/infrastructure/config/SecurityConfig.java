@@ -82,6 +82,11 @@ public class SecurityConfig {
                         // Registro de recursos: exclusivo de Dirección Universitaria.
                         .requestMatchers(HttpMethod.POST, "/api/v1/activos", "/api/v1/espacios")
                         .hasAnyRole(ROLE_DIRECCION)
+                        // Edición y baja lógica: exclusivo de Dirección Universitaria.
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/recursos/*")
+                        .hasAnyRole(ROLE_DIRECCION)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/recursos/*")
+                        .hasAnyRole(ROLE_DIRECCION)
                         // Actualización manual de estado: exclusivo de Dirección Universitaria.
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/recursos/*/estado")
                         .hasAnyRole(ROLE_DIRECCION)
@@ -146,7 +151,7 @@ public class SecurityConfig {
                         .map(String::trim)
                         .filter(origin -> !origin.isEmpty())
                         .toList());
-        configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PATCH", "OPTIONS"));
+        configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Correlation-Id"));
         configuration.setMaxAge(3600L);
 

@@ -120,7 +120,7 @@ class GestionRecursosTest {
     void listarRecursosExitoso() {
         RecursoResumenView resumen = new RecursoResumenView(
                 UUID.randomUUID(), "ACT-100", "Laptop Dell", "ACTIVO", "DISPONIBLE", "OPTIMO",
-                "Facultad QA", "Ubicacion QA", 10, 30, LocalDateTime.now());
+                "Facultad QA", "Ubicacion QA", 10, 30, LocalDateTime.now(), null);
 
         when(recursoQueryPort.listar(filtro, "nombre", "ASC", 0, 10)).thenReturn(List.of(resumen));
         when(recursoQueryPort.contar(filtro)).thenReturn(1L);

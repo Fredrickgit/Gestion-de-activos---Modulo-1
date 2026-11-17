@@ -44,4 +44,11 @@ public interface EspacioRepository {
     boolean existsByNombre(String nombre);
 
     boolean existsByCodigo(String codigo);
+
+    /**
+     * Marca el espacio como dado de baja lógicamente.
+     *
+     * @return número de filas afectadas (0 si el recurso no existe)
+     */
+    int marcarBaja(UUID id);
 }

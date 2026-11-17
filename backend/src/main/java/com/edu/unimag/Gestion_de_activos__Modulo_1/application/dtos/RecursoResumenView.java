@@ -14,6 +14,7 @@ public record RecursoResumenView(
         String ubicacion,
         Integer aforoMaximo,
         Integer plazoDevolucion,
-        LocalDateTime fechaRegistro
+        LocalDateTime fechaRegistro,
+        String tipoActivo
 ) {
 }

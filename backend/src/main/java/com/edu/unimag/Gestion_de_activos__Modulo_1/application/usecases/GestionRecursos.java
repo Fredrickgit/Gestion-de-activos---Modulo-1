@@ -1,10 +1,12 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases;
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarEstadoCommand;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.ActualizarRecursoCommand;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.CrearActivoCommand;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.CrearEspacioCommand;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.DisponibilidadView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.EstadoActualizadoView;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.HistorialRecursoView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.PaginaView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoDetalleView;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.dtos.RecursoFiltro;
@@ -137,6 +139,114 @@ public class GestionRecursos {
         return recursoQueryPort.findDetalle(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No se encontró un recurso con el id '" + id + "'."));
+    }
+
+    public List<HistorialRecursoView> historial(UUID id) {
+        obtener(id);
+        return historialRecursoPort.listar(id);
+    }
+
+    /**
+     * Edita los campos mutables de un activo o espacio. Los campos nulos del
+     * comando conservan el valor actual.
+     */
+    public RecursoDetalleView actualizar(UUID id, ActualizarRecursoCommand command) {
+        return transactionPort.execute(() -> {
+            Optional<Activo> activoOpt = activoRepository.findByIdForUpdate(id);
+            if (activoOpt.isPresent()) {
+                Activo actual = activoOpt.get();
+                UUID espacioId = actual.getEspacioId();
+                if (command.ubicacionId() != null) {
+                    espacioRepository.findById(command.ubicacionId())
+                            .orElseThrow(() -> new EntidadRelacionadaInvalidaException(
+                                    "El espacio indicado en 'ubicacionId' no existe: "
+                                            + command.ubicacionId()));
+                    espacioId = command.ubicacionId();
+                }
+                UUID estadoFisicoId = command.estadoFisico() == null
+                        ? actual.getEstadoFisicoId()
+                        : obtenerEstadoFisicoId(command.estadoFisico());
+                UUID tipoActivoId = command.tipoActivoId() == null
+                        ? actual.getTipoActivoId()
+                        : obtenerTipoActivoId(command.tipoActivoId());
+
+                Activo actualizado = Activo.builder()
+                        .id(actual.getId())
+                        .nombre(nombreEditado(command.nombre(), actual.getNombre()))
+                        .codigo(actual.getCodigo())
+                        .categoria(CategoriaRecurso.ACTIVO)
+                        .plazoDevolucion(command.plazoDevolucion() != null
+                                ? command.plazoDevolucion() : actual.getPlazoDevolucion())
+                        .estadoFisicoId(estadoFisicoId)
+                        .disponibilidadId(actual.getDisponibilidadId())
+                        .tipoActivoId(tipoActivoId)
+                        .espacioId(espacioId)
+                        .build();
+                activoRepository.save(actualizado);
+                return obtener(id);
+            }
+
+            Espacio actual = espacioRepository.findByIdForUpdate(id)
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
+                            "No se encontró un recurso con el id '" + id + "'."));
+
+            if (command.facultadId() != null) {
+                validarFacultad(command.facultadId());
+            }
+            UUID ubicacionId = actual.getUbicacionId();
+            if (command.ubicacionId() != null) {
+                ubicacionRepository.findById(command.ubicacionId())
+                        .orElseThrow(() -> new EntidadRelacionadaInvalidaException(
+                                "La ubicación indicada en 'ubicacionId' no existe: "
+                                        + command.ubicacionId()));
+                ubicacionId = command.ubicacionId();
+            }
+            List<UUID> equipamiento = command.equipamiento() == null
+                    ? actual.getEquipamiento()
+                    : validarEquipamiento(command.equipamiento());
+
+            Espacio actualizado = Espacio.builder()
+                    .id(actual.getId())
+                    .nombre(nombreEditado(command.nombre(), actual.getNombre()))
+                    .codigo(actual.getCodigo())
+                    .categoria(CategoriaRecurso.ESPACIO)
+                    .aforo(command.aforoMaximo() != null ? command.aforoMaximo() : actual.getAforo())
+                    .plazoDevolucion(command.plazoDevolucion() != null
+                            ? command.plazoDevolucion() : actual.getPlazoDevolucion())
+                    .facultadId(command.facultadId() != null
+                            ? command.facultadId() : actual.getFacultadId())
+                    .ubicacionId(ubicacionId)
+                    .disponibilidadId(actual.getDisponibilidadId())
+                    .equipamiento(equipamiento)
+                    .build();
+            espacioRepository.save(actualizado);
+            return obtener(id);
+        });
+    }
+
+    /**
+     * Baja lógica: el recurso deja de aparecer en listados y reportes, pero la
+     * fila se conserva para auditoría.
+     */
+    public void eliminar(UUID id) {
+        transactionPort.execute(() -> {
+            if (activoRepository.existsById(id)) {
+                activoRepository.marcarBaja(id);
+                return null;
+            }
+            if (espacioRepository.existsById(id)) {
+                espacioRepository.marcarBaja(id);
+                return null;
+            }
+            throw new RecursoNoEncontradoException(
+                    "No se encontró un recurso con el id '" + id + "'.");
+        });
+    }
+
+    private String nombreEditado(String nuevoNombre, String nombreActual) {
+        return nuevoNombre == null || nuevoNombre.isBlank()
+                ? nombreActual
+                : nuevoNombre.trim();
     }
 
     public DisponibilidadView disponibilidad(UUID id, OffsetDateTime fechaHora) {

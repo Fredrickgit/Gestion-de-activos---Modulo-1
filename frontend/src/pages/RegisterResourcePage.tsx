@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Database, Info } from 'lucide-react';
 import type { ResourceKind } from '@/types';
 import { useResources } from '@/context/ResourcesContext';
+import { useCatalogs } from '@/context/CatalogsContext';
 import { useToast } from '@/context/ToastContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ContentSurface } from '@/components/layout/ContentSurface';
@@ -27,11 +28,13 @@ function initialValues(): ResourceFormValues {
     maxTerm: '1 día',
     faculty: '',
     responsible: '',
+    equipamiento: [],
   };
 }
 
 export function RegisterResourcePage() {
   const { resources, addResource } = useResources();
+  const { catalogs, loading: catalogsLoading, error: catalogsError } = useCatalogs();
   const { pushToast } = useToast();
   const navigate = useNavigate();
 
@@ -47,6 +50,7 @@ export function RegisterResourcePage() {
       id: '',
       category: '',
       capacity: '',
+      equipamiento: [],
     }));
     setErrors({});
   };
@@ -104,15 +108,23 @@ export function RegisterResourcePage() {
       } else if (capacity < 1 || capacity > 999) {
         next.capacity = 'El aforo debe estar entre 1 y 999 personas.';
       }
+      const hasActivos = resources.some(
+        (resource) => resource.kind === 'activo' && resource.uuid,
+      );
+      if (hasActivos && values.equipamiento.length === 0) {
+        next.equipamiento = 'Selecciona al menos un activo de equipamiento.';
+      }
     }
 
     if (!values.maxTerm) next.maxTerm = 'Selecciona un plazo máximo.';
-    if (!values.faculty) next.faculty = 'Selecciona la facultad responsable.';
+    if (kind === 'espacio' && !values.faculty) {
+      next.faculty = 'Selecciona la facultad responsable.';
+    }
 
     return next;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors = validate();
     setErrors(nextErrors);
@@ -126,27 +138,48 @@ export function RegisterResourcePage() {
       return;
     }
 
-    const resource = addResource({
-      id: values.id.trim().toUpperCase(),
-      name: values.name.trim(),
-      kind,
-      category: values.category,
-      location: values.location,
-      faculty: values.faculty,
-      condition: kind === 'activo' ? values.condition : 'Bueno',
-      capacity: kind === 'espacio' ? Number(values.capacity) : undefined,
-      maxTerm: values.maxTerm,
-      status: 'disponible',
-      responsible: values.responsible.trim() || 'Sin asignar',
-    });
+    const location = catalogs.ubicaciones.find((item) => item.id === values.location);
+    const faculty = catalogs.facultades.find((item) => item.id === values.faculty);
+    const tipoActivo = catalogs.tiposActivo.find((item) => item.id === values.category);
+    const selectedSpace = resources.find((item) => item.uuid === values.location);
 
-    pushToast({
-      variant: 'success',
-      title: 'Recurso creado',
-      description: `${resource.name} (${resource.id}) se registró en estado Disponible.`,
-    });
+    try {
+      const resource = await addResource({
+        id: values.id.trim().toUpperCase(),
+        name: values.name.trim(),
+        kind,
+        category: kind === 'activo' ? (tipoActivo?.nombre ?? values.category) : values.category,
+        location:
+          kind === 'activo'
+            ? (selectedSpace ? `${selectedSpace.id} · ${selectedSpace.name}` : values.location)
+            : (location?.nombre ?? values.location),
+        faculty: faculty?.nombre ?? values.faculty,
+        condition: kind === 'activo' ? values.condition : 'Bueno',
+        capacity: kind === 'espacio' ? Number(values.capacity) : undefined,
+        maxTerm: values.maxTerm,
+        status: 'disponible',
+        responsible: values.responsible.trim() || 'Sin asignar',
+        facultadId: kind === 'espacio' ? values.faculty : undefined,
+        ubicacionId: values.location,
+        tipoActivoId: kind === 'activo' ? values.category : undefined,
+        equipamiento: kind === 'espacio' ? values.equipamiento : undefined,
+      });
 
-    navigate('/inventario', { state: { createdId: resource.id } });
+      pushToast({
+        variant: 'success',
+        title: 'Recurso creado',
+        description: `${resource.name} (${resource.id}) se registró en estado Disponible.`,
+      });
+
+      navigate('/inventario', { state: { createdId: resource.id } });
+    } catch (cause) {
+      pushToast({
+        variant: 'error',
+        title: 'No se pudo crear el recurso',
+        description:
+          cause instanceof Error ? cause.message : 'La API rechazó la solicitud.',
+      });
+    }
   };
 
   return (
@@ -184,6 +217,16 @@ export function RegisterResourcePage() {
               </div>
 
               <div className="my-6 h-px bg-line" aria-hidden />
+
+              {catalogsLoading ? (
+                <p className="mb-5 rounded-lg border border-line bg-soft px-3 py-2 text-xs text-muted">
+                  Cargando catálogos de facultades, ubicaciones y tipos...
+                </p>
+              ) : catalogsError ? (
+                <p className="mb-5 rounded-lg border border-danger/30 bg-red-50 px-3 py-2 text-xs text-danger">
+                  No se pudieron cargar los catálogos: {catalogsError}
+                </p>
+              ) : null}
 
               <ResourceForm
                 kind={kind}

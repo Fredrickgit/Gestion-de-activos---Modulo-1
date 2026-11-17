@@ -55,7 +55,7 @@ class RecursosControllerTest {
     @DisplayName("Lista recursos paginados")
     void listarDelegaYPagina() {
         RecursoResumenView resumen = new RecursoResumenView(
-                id, "ACT-001", "Microscopio #5", "ACTIVO", "DISPONIBLE", "OPTIMO", "Facultad", "Ubicacion", 30, 30, null);
+                id, "ACT-001", "Microscopio #5", "ACTIVO", "DISPONIBLE", "OPTIMO", "Facultad", "Ubicacion", 30, 30, null, null);
         when(gestionRecursos.listar(any(RecursoFiltro.class), eq(0), eq(20)))
                 .thenReturn(new PaginaView<>(List.of(resumen), 0, 20, 1));
 

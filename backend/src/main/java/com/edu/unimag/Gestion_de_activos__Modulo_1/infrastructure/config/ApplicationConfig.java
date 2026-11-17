@@ -5,6 +5,7 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.application.ports.HistorialRe
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.ports.RecursoQueryPort;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.ports.TransactionPort;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.ports.ValidacionExternaPort;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.ConsultarCatalogos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.application.usecases.GestionRecursos;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.ActivoRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.ports.EstadoActivoRepository;
@@ -48,5 +49,19 @@ public class ApplicationConfig {
                 estadoActualizadoPort,
                 historialRecursoPort,
                 transactionPort);
+    }
+
+    @Bean
+    public ConsultarCatalogos consultarCatalogos(FacultadRepository facultadRepository,
+                                                  UbicacionUniversitariaRepository ubicacionRepository,
+                                                  TipoActivoRepository tipoActivoRepository,
+                                                  EstadoDisponibilidadRepository estadoDisponibilidadRepository,
+                                                  EstadoActivoRepository estadoActivoRepository) {
+        return new ConsultarCatalogos(
+                facultadRepository,
+                ubicacionRepository,
+                tipoActivoRepository,
+                estadoDisponibilidadRepository,
+                estadoActivoRepository);
     }
 }

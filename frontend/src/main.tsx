@@ -12,6 +12,7 @@ import '@fontsource/cousine/700.css';
 import './index.css';
 import App from './App';
 import { ResourcesProvider } from './context/ResourcesContext';
+import { CatalogsProvider } from './context/CatalogsContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastViewport } from './components/ui/Toast';
 
@@ -25,10 +26,12 @@ createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       <ToastProvider>
-        <ResourcesProvider>
-          <App />
-          <ToastViewport />
-        </ResourcesProvider>
+        <CatalogsProvider>
+          <ResourcesProvider>
+            <App />
+            <ToastViewport />
+          </ResourcesProvider>
+        </CatalogsProvider>
       </ToastProvider>
     </BrowserRouter>
   </StrictMode>,

@@ -25,8 +25,17 @@ interface InventoryPageProps {
 }
 
 export function InventoryPage({ tab }: InventoryPageProps) {
-  const { resources, getResource, updateResource, changeStatus, deleteResource } =
-    useResources();
+  const {
+    resources,
+    loading,
+    error,
+    refresh,
+    getResource,
+    updateResource,
+    changeStatus,
+    deleteResource,
+    loadHistory,
+  } = useResources();
   const { pushToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -146,40 +155,67 @@ export function InventoryPage({ tab }: InventoryPageProps) {
     setPanelOpen(true);
   };
 
-  const handleEditSave = (patch: Partial<ResourceInput>) => {
+  const handleEditSave = async (patch: Partial<ResourceInput>) => {
     if (!selectedResource) return;
-    updateResource(selectedResource.id, patch);
-    setModal(null);
-    pushToast({
-      variant: 'success',
-      title: 'Recurso actualizado',
-      description: `Los cambios de ${selectedResource.id} se guardaron correctamente.`,
-    });
+    try {
+      if (patch.status && patch.status !== selectedResource.status) {
+        await changeStatus(selectedResource.id, patch.status);
+      }
+      await updateResource(selectedResource.id, patch);
+      setModal(null);
+      pushToast({
+        variant: 'success',
+        title: 'Recurso actualizado',
+        description: `Los cambios de ${selectedResource.id} se guardaron correctamente.`,
+      });
+    } catch (cause) {
+      pushToast({
+        variant: 'error',
+        title: 'No se pudo actualizar',
+        description: cause instanceof Error ? cause.message : 'La API rechazó la solicitud.',
+      });
+    }
   };
 
-  const handleStatusChange = (status: ResourceStatus) => {
+  const handleStatusChange = async (status: ResourceStatus) => {
     if (!selectedResource) return;
-    changeStatus(selectedResource.id, status);
-    setModal(null);
-    pushToast({
-      variant: 'success',
-      title: 'Estado actualizado',
-      description: `${selectedResource.name} ahora está en estado ${status.replace('-', ' ')}.`,
-    });
+    try {
+      await changeStatus(selectedResource.id, status);
+      setModal(null);
+      pushToast({
+        variant: 'success',
+        title: 'Estado actualizado',
+        description: `${selectedResource.name} ahora está en estado ${status.replace('-', ' ')}.`,
+      });
+    } catch (cause) {
+      pushToast({
+        variant: 'error',
+        title: 'No se pudo cambiar el estado',
+        description: cause instanceof Error ? cause.message : 'La API rechazó la solicitud.',
+      });
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedResource) return;
     const deleted = selectedResource;
-    deleteResource(deleted.id);
-    setModal(null);
-    setSelectedId(null);
-    setPanelOpen(false);
-    pushToast({
-      variant: 'success',
-      title: 'Recurso eliminado',
-      description: `${deleted.name} se quitó del inventario.`,
-    });
+    try {
+      await deleteResource(deleted.id);
+      setModal(null);
+      setSelectedId(null);
+      setPanelOpen(false);
+      pushToast({
+        variant: 'success',
+        title: 'Recurso eliminado',
+        description: `${deleted.name} se quitó del inventario.`,
+      });
+    } catch (cause) {
+      pushToast({
+        variant: 'error',
+        title: 'No se pudo eliminar',
+        description: cause instanceof Error ? cause.message : 'La API rechazó la solicitud.',
+      });
+    }
   };
 
   return (
@@ -207,8 +243,27 @@ export function InventoryPage({ tab }: InventoryPageProps) {
               onClear={clearFilters}
             />
 
-            <StatusSummary value={statusFilter} onChange={setStatusFilter} />
+            <StatusSummary
+              value={statusFilter}
+              onChange={setStatusFilter}
+              resources={tabResources}
+            />
 
+            {loading ? (
+              <div className="rounded-2xl border border-line bg-white p-8 text-center text-sm text-muted">
+                Cargando inventario desde la API...
+              </div>
+            ) : error ? (
+              <div className="rounded-2xl border border-danger/30 bg-red-50 p-6 text-center">
+                <p className="font-display text-sm font-bold text-danger">
+                  No fue posible cargar el inventario
+                </p>
+                <p className="mt-1 text-xs text-muted">{error}</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => void refresh()}>
+                  Reintentar
+                </Button>
+              </div>
+            ) : (
             <div className="rounded-2xl border border-line bg-white p-3 md:p-4">
               {visibleResources.length > 0 ? (
                 <div className="flex flex-col gap-3 md:gap-4">
@@ -233,6 +288,7 @@ export function InventoryPage({ tab }: InventoryPageProps) {
                 />
               )}
             </div>
+            )}
           </div>
         </ContentSurface>
 
@@ -281,6 +337,7 @@ export function InventoryPage({ tab }: InventoryPageProps) {
         open={modal === 'history'}
         resource={selectedResource ?? null}
         onClose={() => setModal(null)}
+        loadHistory={loadHistory}
       />
     </>
   );

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
 import type { ReportFilters, ReportRow, ReportSortKey, Resource } from '@/types';
-import { initialReportRows } from '@/data/reports';
 import { STATUS_META } from '@/constants/status';
 import { useResources } from '@/context/ResourcesContext';
 import { useToast } from '@/context/ToastContext';
@@ -15,9 +14,11 @@ import { ReportSummary } from '@/components/reports/ReportSummary';
 import { ReportTable, type SortDirection } from '@/components/reports/ReportTable';
 import { ReportPagination } from '@/components/reports/ReportPagination';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const DEFAULT_FILTERS: ReportFilters = {
-  from: '2026-01-01',
-  to: '2026-06-30',
+  from: `${CURRENT_YEAR}-01-01`,
+  to: `${CURRENT_YEAR}-12-31`,
   kind: 'todos',
   format: 'pdf',
 };
@@ -65,39 +66,17 @@ function compareRows(a: ReportRow, b: ReportRow, key: ReportSortKey): number {
 
 export function ReportsPage() {
   const { pushToast } = useToast();
-  const { resources } = useResources();
+  const { resources, loading, error } = useResources();
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS);
   const [sortKey, setSortKey] = useState<ReportSortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const reportRows = useMemo(() => {
-    const liveById = new Map(resources.map((resource) => [resource.id, resource]));
-
-    const merged = initialReportRows.map((row) => {
-      const live = liveById.get(row.id);
-      if (!live) return row;
-      return {
-        ...row,
-        name: live.name,
-        type: live.category,
-        location: live.location,
-        status: live.status,
-        capacity:
-          live.kind === 'espacio' && live.capacity
-            ? `${live.capacity} Estudiantes`
-            : row.capacity,
-      };
-    });
-
-    const known = new Set(initialReportRows.map((row) => row.id));
-    const added = resources
-      .filter((resource) => !known.has(resource.id))
-      .map(toReportRow);
-
-    return [...merged, ...added];
-  }, [resources]);
+  const reportRows = useMemo(
+    () => resources.map(toReportRow),
+    [resources],
+  );
 
   const filteredRows = useMemo(
     () =>
@@ -199,6 +178,16 @@ export function ReportsPage() {
             canClear={canClear}
             onClear={handleClear}
           />
+
+          {loading ? (
+            <div className="rounded-xl border border-line bg-white p-8 text-center text-sm text-muted">
+              Cargando recursos desde la API...
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-danger/30 bg-red-50 p-6 text-center text-sm text-danger">
+              {error}
+            </div>
+          ) : null}
 
           <div className="overflow-hidden rounded-xl border border-line bg-white">
             <ReportTable

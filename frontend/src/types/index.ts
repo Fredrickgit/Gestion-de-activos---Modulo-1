@@ -16,7 +16,10 @@ export interface ResourceHistoryEntry {
 }
 
 export interface Resource {
+  /** Código de negocio (ACT-... / ESP-...). Es lo que se muestra en la UI. */
   id: string;
+  /** UUID real del backend. */
+  uuid?: string;
   name: string;
   kind: ResourceKind;
   category: string;
@@ -30,11 +33,37 @@ export interface Resource {
   registeredAt: string;
   image?: string;
   history: ResourceHistoryEntry[];
+  /** Identificadores de catálogo, cuando la API los conoce. */
+  facultadId?: string;
+  ubicacionId?: string;
+  tipoActivoId?: string;
 }
 
 export type ResourceInput = Omit<Resource, 'history' | 'registeredAt'> & {
   registeredAt?: string;
+  /** Días de plazo; para activos se deriva del tipo seleccionado. */
+  plazoDevolucion?: number;
+  /** Activos que equipan un espacio al registrarlo. */
+  equipamiento?: string[];
 };
+
+export interface CatalogItem {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface TipoActivoCatalogItem extends CatalogItem {
+  plazoDevolucion: number;
+}
+
+export interface Catalogs {
+  facultades: CatalogItem[];
+  ubicaciones: CatalogItem[];
+  tiposActivo: TipoActivoCatalogItem[];
+  estadosDisponibilidad: CatalogItem[];
+  estadosFisicos: CatalogItem[];
+}
 
 export interface ReportFilters {
   from: string;
