@@ -1,306 +1,398 @@
-# Despliegue en Render.com (plan gratuito)
+# Despliegue en Render.com
 
-Guía del Módulo 1 — Spring Boot 4 + PostgreSQL + Kafka.
-
-> **Resumen:** Render no necesita una carpeta llamada `/dockerfile`. Lo que
-> necesita es la **ruta** a un `Dockerfile` dentro del repositorio. En este
-> proyecto está en `backend/Dockerfile` y su contexto de build es `backend/`.
+Documentación del despliegue actual del **Módulo 1 — Gestión de Activos Universitarios**.
 
 ---
 
-## 1. Qué se agregó al proyecto
+## 1. Qué es Render.com
 
-| Archivo | Para qué sirve |
-| --- | --- |
-| `backend/Dockerfile` | Build multi-etapa: Maven + JDK 21 para compilar, JRE 21 para ejecutar. |
-| `backend/.dockerignore` | Evita enviar `target/`, `.git`, IDE y tests al contexto de Docker. |
-| `render.yaml` | Blueprint opcional: crea el servicio web y la base de datos de Render. |
-| `application.yaml` → `server.port: ${PORT:8080}` | Render inyecta `PORT` (por defecto **10000**). |
-| `application.yaml` → datasource por variables de entorno | `DB_URL` o `DB_HOST`/`DB_PORT`/`DB_NAME` + credenciales. |
-| `RenderDatabaseEnvironmentPostProcessor` | Convierte `DATABASE_URL` de Render (`postgresql://...`) a una URL JDBC válida. |
-| `spring-boot-starter-flyway` en `pom.xml` | En Spring Boot 4 la autoconfiguración de Flyway ya no viene con `flyway-core`. Sin esto las migraciones **no se ejecutan**. |
-| `KAFKA_LISTENERS_AUTO_STARTUP` | Permite arrancar sin broker Kafka. |
-| `KAFKA_PRODUCER_*` | Timeouts cortos del productor para que el outbox no bloquee 60 s si Kafka no responde. |
-| `SecurityConfig` | HTTP Basic, sesión sin estado, CSRF desactivado y roles `DIRECCION`/`MONITOR`. |
-| `OUTBOX_RELAY_ENABLED` | Permite desactivar el relay del outbox sin Kafka. |
-| `EXTERNAL_VALIDATION_ENABLED` | Permite desactivar las llamadas a los módulos 2 y 3. |
+Render.com es una plataforma en la nube (PaaS) que permite desplegar
+aplicaciones, bases de datos y sitios estáticos sin administrar servidores.
 
-### ¿Por qué no se usa `${DATABASE_URL}` directamente?
+En este proyecto se usa para alojar:
 
-Render entrega la URL así:
+- Una **API REST** desarrollada con Spring Boot.
+- Un **frontend** desarrollado con React + Vite.
+- Una **base de datos PostgreSQL**.
 
-```
-postgresql://usuario:clave@host:5432/base
-```
+Render ofrece, entre otras cosas:
 
-El driver JDBC de PostgreSQL **no acepta** ese esquema; necesita:
+- Despliegue automático desde un repositorio de GitHub.
+- HTTPS y certificados TLS administrados.
+- Servicios en Docker.
+- PostgreSQL administrado.
+- Sitios estáticos servidos por CDN.
+- Un plan gratuito para pruebas y demostraciones.
+
+### Cómo funciona el despliegue
+
+Cada vez que se hace `push` a la rama configurada, Render reconstruye y publica
+el servicio correspondiente.
 
 ```
-jdbc:postgresql://host:5432/base
+GitHub (rama develop)
+        │
+        ├── push ──> Backend  (Docker)     ──> PostgreSQL
+        │
+        └── push ──> Frontend (Static Site)
 ```
 
-Por eso el `EnvironmentPostProcessor` la traduce automáticamente. Si prefieres
-evitar la conversión, define `DB_URL` ya en formato JDBC (tiene prioridad).
+El backend y el frontend son **dos servicios independientes**. No es que el
+backend sirva el frontend: cada uno tiene su propia URL, su propio build y su
+propio despliegue.
 
 ---
 
-## 2. Requisitos previos
+## 2. Qué tenemos creado en Render
 
-1. El repositorio debe estar en GitHub/GitLab/Bitbucket y conectado a Render.
-2. La rama que se despliegue **debe compilar**. Render ejecuta
-   `mvn package` dentro del Dockerfile; si el código no compila, el build falla.
-3. Flujo Gitflow del proyecto: trabajar en `feature/*`, PR hacia `develop`.
-   No hacer push directo a `main` ni a `develop`.
+Actualmente existen estos recursos:
 
-> **Estado actual:** el backend compila correctamente y la suite pasa con
-> `./mvnw test` (173 tests). Incluye Flyway, outbox, seguridad HTTP Basic con
-> roles, corrección de lectura tras escritura y Dockerfile listo para Render.
-> Antes de desplegar, verifica siempre que la rama seleccionada pase tests y
-> build.
+| Recurso | Tipo en Render | Nombre del servicio | URL pública |
+|---|---|---|---|
+| Backend / API REST | Web Service con Docker | `gestion-de-activos-modulo-1` | `https://gestion-de-activos-modulo-1.onrender.com` |
+| Frontend | Static Site | `gestion-de-activos-modulo-1-0yu6` | `https://gestion-de-activos-modulo-1-0yu6.onrender.com` |
+| Base de datos | Render Postgres | Ver Dashboard | Solo conexión interna |
+
+### 2.1 Backend
+
+- Aplicación Spring Boot 4 con Java 21.
+- Se ejecuta dentro de un contenedor Docker.
+- Usa PostgreSQL como base de datos.
+- Aplica las migraciones con Flyway al arrancar.
+- Expone la API bajo `/api/v1`.
+- Está protegido con autenticación HTTP Basic.
+- En el plan gratuito se duerme tras 15 minutos sin tráfico.
+
+Ejemplos de endpoints:
+
+```
+GET  /api/v1/recursos
+GET  /api/v1/recursos/{id}
+GET  /api/v1/recursos/{id}/historial
+GET  /api/v1/catalogos
+GET  /api/v1/reportes
+POST /api/v1/activos
+POST /api/v1/espacios
+PATCH /api/v1/recursos/{id}
+PATCH /api/v1/recursos/{id}/estado
+DELETE /api/v1/recursos/{id}
+```
+
+### 2.2 Frontend
+
+- Aplicación React 19 + Vite + TypeScript.
+- Se compila a archivos estáticos en `frontend/dist`.
+- Render la publica como **Static Site** sobre CDN.
+- No se duerme.
+- Usa React Router, por lo que necesita una regla de rewrite para las rutas.
+- Consume la API del backend por HTTPS.
+
+### 2.3 Base de datos
+
+- PostgreSQL administrado por Render.
+- Se conecta al backend mediante la red interna de Render.
+- En el plan gratuito tiene 1 GB y expira a los 30 días.
+- La contraseña la genera Render y se consulta en el Dashboard.
+- Las tablas y catálogos se crean con las migraciones Flyway del backend.
 
 ---
 
-## 3. Opción A — Blueprint (recomendada)
+## 3. Configuración actual
 
-El archivo `render.yaml` ya está en la raíz del repositorio.
+### 3.1 Backend — Web Service
 
-1. En Render: **New → Blueprint**.
-2. Conecta el repositorio y selecciona la rama a desplegar (`develop` cuando
-   esté listo el merge).
-3. Render crea:
-   - Base de datos PostgreSQL gratuita `gestion-activos-db`.
-   - Servicio web Docker `gestion-activos-m1` (backend).
-   - Sitio estático `gestion-activos-frontend` (frontend Vite).
-4. Cuando lo solicite, define las cuatro credenciales:
-   - `SECURITY_USER` y `SECURITY_PASSWORD` (backend).
-   - `VITE_API_USERNAME` y `VITE_API_PASSWORD` (frontend, **los mismos valores**).
-5. Espera el primer build del backend y del frontend.
-6. Abre `https://gestion-activos-frontend.onrender.com` (o la URL real que
-   muestre Render).
+| Opción | Valor |
+|---|---|
+| Tipo | Web Service |
+| Runtime | Docker |
+| Nombre | `gestion-de-activos-modulo-1` |
+| Repositorio | `Fredrickgit/Gestion-de-activos---Modulo-1` |
+| Rama | `develop` |
+| Plan | Free |
+| Región | Oregon |
+| Dockerfile | `backend/Dockerfile` |
+| Contexto de build | `backend` |
+| Auto deploy | Sí, en cada commit a `develop` |
+| Health Check Path | Vacío |
+| Puerto | Asignado por Render mediante `PORT` |
 
-Las variables de base de datos (`DB_HOST`, `DB_PORT`, `DB_NAME`,
-`DB_USERNAME`, `DB_PASSWORD`) se inyectan automáticamente desde la base de
-datos. Kafka y los módulos externos quedan desactivados.
+#### Variables de entorno del backend
+
+| Variable | Valor | Para qué sirve |
+|---|---|---|
+| `SECURITY_USER` | `admin_unimag` | Usuario HTTP Basic de la API |
+| `SECURITY_PASSWORD` | `Unimag2026*Activos` | Contraseña HTTP Basic |
+| `CORS_ALLOWED_ORIGINS` | `https://gestion-de-activos-modulo-1-0yu6.onrender.com` | Permite las peticiones del frontend |
+| `DB_HOST` | Generado por Render | Host interno de PostgreSQL |
+| `DB_PORT` | Generado por Render | Puerto de PostgreSQL |
+| `DB_NAME` | Generado por Render | Nombre de la base de datos |
+| `DB_USERNAME` | Generado por Render | Usuario de PostgreSQL |
+| `DB_PASSWORD` | Generado por Render | Contraseña de PostgreSQL |
+| `KAFKA_LISTENERS_AUTO_STARTUP` | `false` | Evita intentar conectar con Kafka |
+| `OUTBOX_RELAY_ENABLED` | `false` | Desactiva el relay de eventos |
+| `EXTERNAL_VALIDATION_ENABLED` | `false` | Evita llamadas a los módulos 2 y 3 |
+
+> Las variables `DB_*` no se escriben a mano si se usa el Blueprint: Render las
+> inyecta desde la base de datos. Si la base se creó manualmente, se copian
+> desde la sección **Connect** del Dashboard.
+
+#### Credenciales de la API
+
+```
+Usuario:    admin_unimag
+Contraseña: Unimag2026*Activos
+Tipo:       HTTP Basic
+```
+
+Estas mismas credenciales deben estar configuradas en el frontend como
+`VITE_API_USERNAME` y `VITE_API_PASSWORD`.
 
 ---
 
-## 4. Opción B — Configuración manual en el Dashboard
+### 3.2 Frontend — Static Site
 
-### 4.1 Crear la base de datos
+| Opción | Valor |
+|---|---|
+| Tipo | Static Site |
+| Runtime | Static |
+| Nombre | `gestion-de-activos-modulo-1-0yu6` |
+| Repositorio | `Fredrickgit/Gestion-de-activos---Modulo-1` |
+| Rama | `develop` |
+| Build Command | `cd frontend && npm ci && npm run build` |
+| Publish Directory | `frontend/dist` |
+| Auto deploy | Sí, en cada commit a `develop` |
+| Rewrite | `/*` → `/index.html` con acción **Rewrite** |
 
-1. **New → Postgres**.
-2. Plan **Free**, misma región que el servicio web (por defecto `oregon`).
-3. Define nombre, base y usuario (o deja los generados).
-4. Copia los datos de conexión desde **Connect**:
-   - Host interno, puerto, base, usuario y contraseña, **o**
-   - La *Internal Database URL* (`postgresql://...`).
+#### Variables de entorno del frontend
 
-### 4.2 Crear el servicio web
+| Variable | Valor | Para qué sirve |
+|---|---|---|
+| `VITE_API_BASE_URL` | `https://gestion-de-activos-modulo-1.onrender.com/api/v1` | URL base de la API |
+| `VITE_API_USERNAME` | `admin_unimag` | Usuario HTTP Basic |
+| `VITE_API_PASSWORD` | `Unimag2026*Activos` | Contraseña HTTP Basic |
+| `VITE_API_TIMEOUT_MS` | `60000` | Tiempo máximo por petición |
+| `VITE_DEMO_MODE` | `false` | Usa el backend real, no datos de demostración |
 
-1. **New → Web Service** y conecta el repositorio.
-2. Configura:
+> Las variables `VITE_*` se graban dentro del JavaScript durante el build.
+> Después de cambiarlas hay que hacer **Manual Deploy → Clear build cache &
+> deploy**.
+
+#### Regla de rewrite
 
 | Campo | Valor |
-| --- | --- |
-| Branch | `develop` (o la rama que corresponda) |
-| Language / Runtime | **Docker** |
-| Dockerfile Path | `backend/Dockerfile` |
-| Docker Build Context Directory | `backend` |
-| Plan | **Free** |
+|---|---|
+| Source | `/*` |
+| Destination | `/index.html` |
+| Action | `Rewrite` |
 
-> Alternativa: si usas **Root Directory = `backend`**, entonces el
-> *Dockerfile Path* debe ser `Dockerfile`. No existe ninguna carpeta
-> obligatoria llamada `dockerfile`.
+Esta regla es necesaria para React Router. Sin ella, al entrar directamente a
+`/inventario`, `/reportes` o cualquier otra ruta, Render devolvería `404`.
 
-3. **No definas el puerto manualmente.** Render asigna `PORT` (por defecto
-   10000) y la aplicación ya lo lee.
-4. **Health Check Path:** déjalo vacío. La API está protegida con HTTP Basic y
-   un health check a una ruta protegida devolvería `401`, por lo que Render
-   podría marcar el despliegue como fallido. Sin ruta configurada, Render
-   detecta el puerto abierto.
+---
 
-### 4.3 Variables de entorno del servicio
+### 3.3 Base de datos — Render Postgres
 
-**Base de datos (opción 1, recomendada):**
+| Opción | Valor |
+|---|---|
+| Motor | PostgreSQL |
+| Plan | Free |
+| Región | La misma del backend (Oregon) |
+| Nombre de la base | `gestion_activos_modulo1` |
+| Usuario | `gestion_activos` |
+| Contraseña | Generada por Render; visible en el Dashboard |
+| Almacenamiento | 1 GB |
+| Vencimiento | 30 días en el plan gratuito |
 
-```
-DB_HOST=<host interno>
-DB_PORT=5432
-DB_NAME=<nombre de la base>
-DB_USERNAME=<usuario>
-DB_PASSWORD=<contraseña>
-```
+> Los nombres `gestion_activos_modulo1` y `gestion_activos` corresponden al
+> Blueprint de ejemplo. Si la base se creó manualmente, usa los valores que
+> muestre el Dashboard.
 
-**Base de datos (opción 2):**
+#### Variables de conexión
 
-```
-DATABASE_URL=postgresql://usuario:clave@host:5432/base
-```
-
-La aplicación la convierte a JDBC automáticamente. Si usas `DB_URL` en lugar
-de `DATABASE_URL`, debe empezar por `jdbc:postgresql://`.
-
-**Desactivar dependencias no disponibles en el plan gratuito:**
+El backend se conecta usando:
 
 ```
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USERNAME
+DB_PASSWORD
+```
+
+Los valores reales están en:
+
+```
+Render Dashboard → Base de datos → Connect
+```
+
+---
+
+### 3.4 Comunicación entre frontend, backend y base de datos
+
+```
+Navegador
+   │
+   │ HTTPS
+   ▼
+Frontend estático
+https://gestion-de-activos-modulo-1-0yu6.onrender.com
+   │
+   │ fetch a /api/v1 con HTTP Basic
+   ▼
+Backend Docker
+https://gestion-de-activos-modulo-1.onrender.com
+   │
+   │ conexión interna
+   ▼
+PostgreSQL en Render
+```
+
+El backend solo acepta peticiones del origen configurado en
+`CORS_ALLOWED_ORIGINS`. Si el frontend cambia de dominio, hay que actualizar esa
+variable y redesplegar el backend.
+
+---
+
+## 4. Lista organizada de la configuración
+
+### 4.1 URLs
+
+| Elemento | URL |
+|---|---|
+| Frontend | `https://gestion-de-activos-modulo-1-0yu6.onrender.com` |
+| Backend | `https://gestion-de-activos-modulo-1.onrender.com` |
+| API Base | `https://gestion-de-activos-modulo-1.onrender.com/api/v1` |
+| Catálogos | `https://gestion-de-activos-modulo-1.onrender.com/api/v1/catalogos` |
+| Recursos | `https://gestion-de-activos-modulo-1.onrender.com/api/v1/recursos` |
+
+### 4.2 Credenciales de administración
+
+| Dato | Valor |
+|---|---|
+| Usuario administrador | `admin_unimag` |
+| Contraseña | `Unimag2026*Activos` |
+| Tipo de autenticación | HTTP Basic |
+| Permisos | Rol `DIRECCION` |
+
+Estas credenciales se usan en:
+
+| Servicio | Variable | Valor |
+|---|---|---|
+| Backend | `SECURITY_USER` | `admin_unimag` |
+| Backend | `SECURITY_PASSWORD` | `Unimag2026*Activos` |
+| Frontend | `VITE_API_USERNAME` | `admin_unimag` |
+| Frontend | `VITE_API_PASSWORD` | `Unimag2026*Activos` |
+
+### 4.3 Variables del backend
+
+```
+SECURITY_USER=admin_unimag
+SECURITY_PASSWORD=Unimag2026*Activos
+
+CORS_ALLOWED_ORIGINS=https://gestion-de-activos-modulo-1-0yu6.onrender.com
+
 KAFKA_LISTENERS_AUTO_STARTUP=false
 OUTBOX_RELAY_ENABLED=false
 EXTERNAL_VALIDATION_ENABLED=false
+
+DB_HOST=<host interno de Render>
+DB_PORT=<puerto de Render>
+DB_NAME=<base de datos>
+DB_USERNAME=<usuario de la base>
+DB_PASSWORD=<contraseña de la base>
 ```
 
-**Seguridad (cambia el admin/admin por defecto):**
+### 4.4 Variables del frontend
 
 ```
-SECURITY_USER=<usuario>
-SECURITY_PASSWORD=<contraseña fuerte>
-```
-
-> `SECURITY_USER` tiene el rol **DIRECCION**: puede consultar, crear
-> activos/espacios y cambiar estados. Si necesitas un usuario de solo lectura,
-> define además `SECURITY_MONITOR_USER` y `SECURITY_MONITOR_PASSWORD` (rol
-> **MONITOR**). Los orígenes permitidos para CORS se ajustan con
-> `CORS_ALLOWED_ORIGINS` (por defecto `*`).
-
-> Opcional: `JAVA_OPTS` ya se define en el Dockerfile con
-> `-XX:MaxRAMPercentage=75` para no exceder los 512 MB del plan gratuito.
-
----
-
-## 5. Verificación
-
-La API usa HTTP Basic. Ejemplo:
-
-```bash
-curl -u "$SECURITY_USER:$SECURITY_PASSWORD" \
-     https://<nombre>.onrender.com/api/v1/recursos
-```
-
-Respuestas esperadas:
-
-| Código | Significado |
-| --- | --- |
-| `200` | Servicio y base de datos operativos. |
-| `401` | Credenciales ausentes o incorrectas (la app está viva). |
-| `500` | Revisar logs: normalmente migraciones o conexión a BD. |
-| `502` | El contenedor no arrancó; revisar *Logs* en Render. |
-
-En los logs debe aparecer:
-
-```
-Flyway ... Successfully applied N migrations
-Tomcat started on port 10000 (http)
-Started GestionDeActivosModulo1Application
-```
-
----
-
-## 6. Prueba local del contenedor
-
-```bash
-cd backend
-docker build -t gestion-activos-m1 .
-
-docker run --rm -p 10000:10000 \
-  -e PORT=10000 \
-  -e DB_URL=jdbc:postgresql://host:5432/base \
-  -e DB_USERNAME=usuario \
-  -e DB_PASSWORD=clave \
-  -e KAFKA_LISTENERS_AUTO_STARTUP=false \
-  -e OUTBOX_RELAY_ENABLED=false \
-  -e EXTERNAL_VALIDATION_ENABLED=false \
-  gestion-activos-m1
-```
-
----
-
-## 7. Limitaciones del plan gratuito de Render
-
-- El servicio web **se duerme tras 15 minutos sin tráfico**; la primera
-  petición puede tardar ~1 minuto en despertarlo.
-- La base PostgreSQL gratuita **expira a los 30 días** de creación y tiene
-  **1 GB** de almacenamiento. No es apta para producción.
-- Se otorgan **750 horas de instancia** por mes.
-- No hay Kafka incluido. Por eso el despliegue desactiva listeners y outbox.
-  Si más adelante se contrata un broker, basta con definir
-  `KAFKA_BOOTSTRAP_SERVERS` y volver a poner los flags en `true`.
-- No hay acceso SSH ni discos persistentes.
-- Render puede reiniciar el servicio en cualquier momento.
-
----
-
-## 8. Problemas comunes
-
-| Síntoma | Causa probable | Solución |
-| --- | --- | --- |
-| `Driver ... claims to not accept jdbcUrl, postgresql://...` | Se configuró la URL de Render en `DB_URL` sin convertirla. | Usar `DATABASE_URL` (se convierte sola) o `DB_URL` con prefijo `jdbc:`. |
-| `Schema validation: missing table [activo]` | Flyway no se ejecutó. | Verificar que el `pom.xml` tenga `spring-boot-starter-flyway` (ya corregido). |
-| El deploy falla por health check | Health Check Path apunta a una ruta con `401`. | Dejar el campo vacío. |
-| Build falla con errores de compilación | La rama no compila. | Corregir y mergear a `develop` antes de desplegar. |
-| `OutOfMemoryError` | Heap mayor a 512 MB. | Mantener `-XX:MaxRAMPercentage=75` y no subir el pool de conexiones. |
-| La app arranca pero logs llenos de `Connection to node -1 could not be established` | Listeners de Kafka activos. | `KAFKA_LISTENERS_AUTO_STARTUP=false`. |
-| Timeout al crear/actualizar recursos | Validación externa intentando llegar a los módulos 2 y 3. | `EXTERNAL_VALIDATION_ENABLED=false`. |
-| `401` en `POST`/`PATCH` | Falta configuración de seguridad o CSRF activo. | La rama ya incluye `SecurityConfig`; usar HTTP Basic con las credenciales configuradas. |
-| `404` justo después de crear un recurso | Lectura CQRS antes del flush del INSERT. | Ya corregido con `saveAndFlush` en los repositorios de escritura. |
-
----
-
-## 9. Orden recomendado de trabajo
-
-1. Ejecutar `cd backend && ./mvnw test` y confirmar que pasa.
-2. Abrir PR de `feature/application` → `develop` y mergear.
-3. Crear el Blueprint o el Web Service en Render apuntando a `develop`.
-4. Configurar `SECURITY_USER`/`SECURITY_PASSWORD`.
-5. Verificar `/api/v1/recursos` con `curl`.
-6. En el servicio estático del frontend, configurar `VITE_API_USERNAME` y
-   `VITE_API_PASSWORD` con las mismas credenciales.
-7. Verificar que `CORS_ALLOWED_ORIGINS` del backend incluya el dominio del
-   frontend (`https://gestion-activos-frontend.onrender.com` en el Blueprint).
-
----
-
-## 10. Frontend en Render
-
-El `render.yaml` incluye el servicio estático `gestion-activos-frontend`:
-
-| Campo | Valor |
-| --- | --- |
-| Runtime | Static |
-| Build Command | `cd frontend && npm ci && npm run build` |
-| Publish Path | `frontend/dist` |
-| Rewrite | `/*` → `/index.html` |
-
-Variables del frontend:
-
-```
-VITE_API_BASE_URL=https://gestion-activos-m1.onrender.com/api/v1
-VITE_API_USERNAME=<SECURITY_USER>
-VITE_API_PASSWORD=<SECURITY_PASSWORD>
+VITE_API_BASE_URL=https://gestion-de-activos-modulo-1.onrender.com/api/v1
+VITE_API_USERNAME=admin_unimag
+VITE_API_PASSWORD=Unimag2026*Activos
 VITE_API_TIMEOUT_MS=60000
 VITE_DEMO_MODE=false
 ```
 
-> Las variables `VITE_*` se incorporan al bundle en tiempo de build. Las
-> credenciales HTTP Basic son visibles para cualquier usuario del sitio. Para
-> producción se recomienda añadir login con token o un proxy BFF.
+### 4.5 Credenciales de PostgreSQL
 
-### Endpoints nuevos usados por el frontend
+| Dato | Dónde consultarlo |
+|---|---|
+| Host | Render → base de datos → Connect |
+| Puerto | Render → base de datos → Connect |
+| Base de datos | Render → base de datos → Connect |
+| Usuario | Render → base de datos → Connect |
+| Contraseña | Render → base de datos → Connect |
 
-| Método | Ruta | Uso |
-| --- | --- | --- |
-| `GET` | `/api/v1/catalogos` | Facultades, ubicaciones, tipos y estados |
-| `GET` | `/api/v1/recursos/{id}/historial` | Historial de cambios |
-| `GET` | `/api/v1/reportes` | Reporte paginado de inventario |
-| `PATCH` | `/api/v1/recursos/{id}` | Edición de ficha |
-| `DELETE` | `/api/v1/recursos/{id}` | Baja lógica |
+No se documenta la contraseña de PostgreSQL porque Render la genera y puede
+rotarse desde el Dashboard.
 
-### Prueba local contra Render
+### 4.6 Configuración del frontend en Render
 
-```bash
-cd frontend
-cp .env.example .env
-# completa VITE_API_USERNAME y VITE_API_PASSWORD
-npm run dev
+```
+Tipo:              Static Site
+Rama:              develop
+Build Command:     cd frontend && npm ci && npm run build
+Publish Directory: frontend/dist
+Rewrite:           /*  →  /index.html   (Action: Rewrite)
 ```
 
-Si `VITE_API_BASE_URL` queda vacío, la app funciona en modo demo con los datos
-en memoria de `src/data`.
+### 4.7 Configuración del backend en Render
+
+```
+Tipo:              Web Service
+Runtime:           Docker
+Rama:              develop
+Dockerfile:        backend/Dockerfile
+Contexto:          backend
+Health Check Path: (vacío)
+```
+
+### 4.8 Verificación rápida
+
+Probar los catálogos:
+
+```bash
+curl -i -u "admin_unimag:Unimag2026*Activos" \
+  -H "Origin: https://gestion-de-activos-modulo-1-0yu6.onrender.com" \
+  "https://gestion-de-activos-modulo-1.onrender.com/api/v1/catalogos"
+```
+
+Respuesta esperada:
+
+```http
+HTTP/2 200
+access-control-allow-origin: https://gestion-de-activos-modulo-1-0yu6.onrender.com
+```
+
+Probar los recursos:
+
+```bash
+curl -i -u "admin_unimag:Unimag2026*Activos" \
+  "https://gestion-de-activos-modulo-1.onrender.com/api/v1/recursos"
+```
+
+### 4.9 Orden correcto para registrar información
+
+La base de datos arranca vacía, pero los catálogos ya vienen creados por la
+migración `V5__seed_catalogs.sql`.
+
+1. Registrar primero un **espacio**.
+   - El equipamiento es opcional si todavía no existen activos.
+2. Registrar un **activo** y asociarlo al espacio creado.
+3. Editar la ficha del activo o del espacio.
+4. Cambiar el estado del recurso.
+5. Consultar el historial.
+6. Revisar los reportes.
+
+### 4.10 Notas importantes
+
+- El backend del plan gratuito se duerme tras 15 minutos sin tráfico.
+  La primera petición puede tardar cerca de un minuto.
+- El frontend estático no se duerme.
+- La base PostgreSQL gratuita expira a los 30 días.
+- Solo se permite una base PostgreSQL gratuita por workspace.
+- Las credenciales del frontend quedan visibles en el bundle del navegador.
+- Si se cambia `VITE_API_BASE_URL` o las credenciales del frontend, se debe
+  hacer **Clear build cache & deploy**.
+- Si se cambia `CORS_ALLOWED_ORIGINS`, se debe redesplegar el backend.
+- Si se usa el Blueprint, actualizar también `render.yaml` con las URLs reales
+  para que un **Sync** no vuelva a escribir los valores de ejemplo.
