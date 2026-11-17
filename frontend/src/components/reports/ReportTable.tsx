@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronsUpDown, SearchX } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronsUpDown, SearchX } from 'lucide-react';
 import type { ReportRow, ReportSortKey } from '@/types';
 import { formatDisplayDate } from '@/lib/format';
 import { cn } from '@/lib/cn';
@@ -30,8 +30,13 @@ const COLUMNS: Array<{
 
 export function ReportTable({ rows, sortKey, sortDirection, onSort }: ReportTableProps) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1160px] border-collapse text-left">
+    <div>
+      <p className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-medium text-muted lg:hidden">
+        <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Desliza la tabla para ver todas las columnas
+      </p>
+      <div className="overflow-x-auto overscroll-x-contain">
+        <table className="w-full min-w-[1160px] border-collapse text-left">
         <thead>
           <tr className="border-b border-line bg-soft">
             {COLUMNS.map((column) => {
@@ -124,7 +129,8 @@ export function ReportTable({ rows, sortKey, sortDirection, onSort }: ReportTabl
             ))
           )}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

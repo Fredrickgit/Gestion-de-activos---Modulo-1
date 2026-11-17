@@ -56,18 +56,24 @@ export function ResourceCard({ resource, selected = false, onOpen }: ResourceCar
       onClick={() => onOpen(resource)}
       onKeyDown={handleKeyDown}
       className={cn(
-        'group flex cursor-pointer flex-col gap-5 rounded-[24px] border-2 border-transparent bg-card p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-24px_rgba(15,23,42,0.7)] focus-visible:border-brand/50 focus-visible:outline-none md:flex-row md:items-center md:rounded-[28px] md:p-6',
+        'group flex cursor-pointer flex-col gap-5 rounded-[24px] border-2 border-transparent bg-card p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-24px_rgba(15,23,42,0.7)] focus-visible:border-brand/50 focus-visible:outline-none sm:p-5 md:flex-row md:items-center md:rounded-[28px] md:p-6',
         selected && 'border-brand/45',
       )}
     >
-      <div className="grid min-w-0 flex-1 grid-flow-col grid-cols-2 grid-rows-3 gap-x-4 gap-y-3.5 sm:gap-x-8 sm:gap-y-4">
+      <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-3 gap-y-3.5 sm:gap-x-8 sm:gap-y-4">
         {fields.map((field) => (
-          <div key={field.label} className="min-w-0">
+          <div
+            key={field.label}
+            className={cn('min-w-0', field.label === 'Nombre' && 'col-span-2')}
+          >
             <p className="font-display text-sm font-light italic leading-none text-black/90 lg:text-base">
               {field.label}
             </p>
             <p
-              className="mt-1.5 truncate font-display text-[17px] font-semibold leading-snug text-black md:text-[19px] xl:text-[20px]"
+              className={cn(
+                'mt-1.5 font-display text-[16px] font-semibold leading-snug text-black sm:text-[17px] md:text-[19px] xl:text-[20px]',
+                field.label === 'Nombre' ? 'break-words' : 'line-clamp-2 md:line-clamp-1',
+              )}
               title={field.value}
             >
               {field.value}

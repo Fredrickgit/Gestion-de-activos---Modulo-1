@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, Info } from 'lucide-react';
+import { CircleAlert, Database, Info } from 'lucide-react';
 import type { ResourceKind } from '@/types';
 import { useResources } from '@/context/ResourcesContext';
 import { useCatalogs } from '@/context/CatalogsContext';
@@ -41,6 +41,8 @@ export function RegisterResourcePage() {
   const [kind, setKind] = useState<ResourceKind>('activo');
   const [values, setValues] = useState<ResourceFormValues>(() => initialValues());
   const [errors, setErrors] = useState<ResourceFormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleKindChange = (nextKind: ResourceKind) => {
     if (nextKind === kind) return;
@@ -53,6 +55,7 @@ export function RegisterResourcePage() {
       equipamiento: [],
     }));
     setErrors({});
+    setSubmitError(null);
   };
 
   const handleChange = <K extends keyof ResourceFormValues>(
@@ -63,6 +66,7 @@ export function RegisterResourcePage() {
       ...current,
       [key]: key === 'id' ? String(value).toUpperCase() : value,
     }));
+    setSubmitError(null);
     setErrors((current) => {
       if (!current[key]) return current;
       const next = { ...current };
@@ -124,17 +128,30 @@ export function RegisterResourcePage() {
     return next;
   };
 
+  const focusFirstError = () => {
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const invalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      invalid?.focus({ preventScroll: true });
+    });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitError(null);
     const nextErrors = validate();
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
-      pushToast({
-        variant: 'error',
-        title: 'Revisa el formulario',
-        description: 'Hay campos obligatorios pendientes o con información inválida.',
-      });
+      const detalle = Object.values(nextErrors)
+        .filter(Boolean)
+        .slice(0, 4)
+        .map((message) => `• ${message}`)
+        .join('\n');
+      setSubmitError(
+        `El recurso no se envió porque el formulario está incompleto:\n${detalle}`,
+      );
+      focusFirstError();
       return;
     }
 
@@ -173,12 +190,15 @@ export function RegisterResourcePage() {
 
       navigate('/inventario', { state: { createdId: resource.id } });
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : 'La API rechazó la solicitud.';
+      setSubmitError(`No se pudo crear el recurso:\n• ${message}`);
       pushToast({
         variant: 'error',
         title: 'No se pudo crear el recurso',
-        description:
-          cause instanceof Error ? cause.message : 'La API rechazó la solicitud.',
+        description: message,
       });
+      focusFirstError();
     }
   };
 
@@ -191,8 +211,17 @@ export function RegisterResourcePage() {
 
       <div className="mt-3 px-3 pb-8 sm:px-4 lg:mt-[13px] lg:px-[13px] lg:pr-5">
         <ContentSurface>
-          <form onSubmit={handleSubmit} noValidate>
+          <form ref={formRef} onSubmit={handleSubmit} noValidate>
             <div className="rounded-2xl border border-line bg-white p-4 sm:p-6">
+              {submitError ? (
+                <div
+                  role="alert"
+                  className="mb-5 flex items-start gap-2 rounded-lg border border-danger/40 bg-red-50 px-3.5 py-3 text-[13px] leading-snug text-danger"
+                >
+                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <p className="whitespace-pre-line">{submitError}</p>
+                </div>
+              ) : null}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0">
                   <h2 className="font-display text-[24px] font-semibold leading-tight text-black sm:text-[28px] lg:text-[32px]">
@@ -244,7 +273,7 @@ export function RegisterResourcePage() {
                 </p>
               </div>
 
-              <div className="mt-5 flex flex-col-reverse gap-2.5 md:hidden">
+              <div className="mt-5 flex flex-col gap-2.5 md:hidden">
                 <Button variant="outline" onClick={() => navigate('/inventario')}>
                   Cancelar
                 </Button>

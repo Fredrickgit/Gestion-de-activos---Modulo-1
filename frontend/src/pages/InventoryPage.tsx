@@ -226,7 +226,7 @@ export function InventoryPage({ tab }: InventoryPageProps) {
         className="mt-4 md:mt-[21px]"
       />
 
-      <div className="mt-3 flex flex-col gap-4 px-3 pb-8 pt-0 sm:px-4 lg:mt-[13px] lg:px-[13px] lg:pr-5 min-[1700px]:flex-row min-[1700px]:items-start xl:min-[1700px]:pr-5">
+      <div className="mt-3 flex flex-col gap-4 px-2.5 pb-8 pt-0 sm:px-4 lg:mt-[13px] lg:px-[13px] lg:pr-5 min-[1700px]:flex-row min-[1700px]:items-start">
         <ContentSurface className="min-w-0 flex-1">
           <div className="flex flex-col gap-2.5">
             <InventoryFilters
@@ -264,7 +264,7 @@ export function InventoryPage({ tab }: InventoryPageProps) {
                 </Button>
               </div>
             ) : (
-            <div className="rounded-2xl border border-line bg-white p-3 md:p-4">
+            <div className="rounded-2xl border border-line bg-white p-2.5 md:p-4">
               {visibleResources.length > 0 ? (
                 <div className="flex flex-col gap-3 md:gap-4">
                   {visibleResources.map((resource) => (

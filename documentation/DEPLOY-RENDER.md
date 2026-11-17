@@ -396,3 +396,83 @@ migración `V5__seed_catalogs.sql`.
 - Si se cambia `CORS_ALLOWED_ORIGINS`, se debe redesplegar el backend.
 - Si se usa el Blueprint, actualizar también `render.yaml` con las URLs reales
   para que un **Sync** no vuelva a escribir los valores de ejemplo.
+
+---
+
+## 5. Catálogos, tablas y datos de ejemplo
+
+### 5.1 Tablas de catálogo
+
+Los valores que alimentan los formularios viven en PostgreSQL, no en el código:
+
+| Tabla | Alimenta el campo del formulario |
+|---|---|
+| `facultad` | Facultad |
+| `ubicacion` | Ubicación |
+| `tipo_activo` | Tipo de activo (y su plazo de devolución) |
+| `estado_activo` | Condición física (`NUEVO`, `OPTIMO`, `MAL_ESTADO`, `AVERIADO`) |
+| `estado_disponibilidad` | Estado del recurso (`DISPONIBLE`, `EN_USO`, ...) |
+
+> `estado_activo` y `estado_disponibilidad` están ligados a enumeraciones del
+> backend. Se pueden cambiar sus descripciones, pero **no** agregar valores
+> nuevos: el backend espera exactamente esos nombres.
+>
+> `facultad`, `ubicacion` y `tipo_activo` sí admiten registros nuevos sin tocar
+> el código. El frontend los muestra en el siguiente login o recarga.
+
+### 5.2 Cómo consultar y editar las tablas
+
+En Render, abre la base de datos PostgreSQL y usa la pestaña **Connect**:
+
+- **PSQL Command**: abre una consola SQL en el navegador. Es la vía más rápida.
+- **External Database URL**: úsala desde DBeaver, pgAdmin o `psql` local.
+
+Comandos útiles dentro de la consola:
+
+```sql
+-- Ver catálogos
+SELECT * FROM facultad;
+SELECT * FROM ubicacion;
+SELECT * FROM tipo_activo;
+SELECT * FROM estado_activo;
+SELECT * FROM estado_disponibilidad;
+
+-- Ver recursos
+SELECT * FROM espacio;
+SELECT * FROM activo;
+
+-- Insertar una ubicación nueva
+INSERT INTO ubicacion (nombre, descripcion)
+VALUES ('Bloque 10, Piso 3', 'Laboratorio de redes');
+
+-- Insertar un tipo de activo nuevo
+INSERT INTO tipo_activo (nombre, descripcion, plazo_devolucion)
+VALUES ('Equipo Biomédico', 'Equipos de laboratorio clínico', 2);
+```
+
+### 5.3 Datos de ejemplo automáticos
+
+La migración `V6__seed_sample_data.sql` crea, en bases nuevas, tres espacios y
+tres activos de muestra:
+
+| Código | Nombre | Tipo |
+|---|---|---|
+| `ESP-201A` | Aula 201 - Bloque 2 | Espacio |
+| `ESP-305B` | Laboratorio de Robótica | Espacio |
+| `ESP-410C` | Auditorio Roque Morelli - Sala A | Espacio |
+| `ACT-10001` | Workstation HP Z2 Tower G9 | Activo |
+| `ACT-10002` | Brazo robótico educativo | Activo |
+| `ACT-10003` | Proyector Epson EB-2250U | Activo |
+
+La migración es idempotente: si el código ya existe, no inserta nada. Se aplica
+al desplegar el backend. Para volver a partir de cero hay que eliminar esos
+registros manualmente.
+
+### 5.4 Qué no es una tabla todavía
+
+La **categoría del espacio** (Aula Teórica, Auditorio, Laboratorio Académico...)
+es una lista fija en `frontend/src/data/catalog.ts` y el backend guarda siempre
+`categoria = 'ESPACIO'`. No se persiste la categoría elegida. Si se necesita
+administrar desde base de datos, hay que crear la tabla `categoria_espacio`,
+exponerla en `/api/v1/catalogos` y guardar su id en `espacio`.
+

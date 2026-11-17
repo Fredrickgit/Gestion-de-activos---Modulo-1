@@ -34,7 +34,7 @@ export function StatusSummary({ value, onChange, resources }: StatusSummaryProps
       <div
         role="group"
         aria-label="Filtrar por estado del recurso"
-        className="no-scrollbar mt-3 flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-soft p-1"
+        className="no-scrollbar mt-3 flex max-w-full flex-wrap items-center gap-1 rounded-lg bg-soft p-1"
       >
         {SUMMARY_STATUSES.map((item) => {
           const active = value === item.status;
@@ -45,7 +45,7 @@ export function StatusSummary({ value, onChange, resources }: StatusSummaryProps
               aria-pressed={active}
               onClick={() => onChange(active ? 'todos' : item.status)}
               className={cn(
-                'shrink-0 rounded-md px-4 py-1.5 font-display text-[13px] font-semibold transition-colors duration-150',
+                'shrink-0 rounded-md px-3 py-1.5 font-display text-[12px] font-semibold transition-colors duration-150 sm:px-4 sm:text-[13px]',
                 active
                   ? 'bg-brand/80 text-white shadow-sm'
                   : 'text-muted hover:bg-white/70 hover:text-ink',

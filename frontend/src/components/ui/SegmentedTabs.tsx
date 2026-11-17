@@ -28,7 +28,7 @@ export function SegmentedTabs<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        'no-scrollbar flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-soft p-1',
+        'no-scrollbar flex max-w-full flex-wrap items-center gap-1 rounded-lg bg-soft p-1',
         className,
       )}
     >
@@ -43,7 +43,7 @@ export function SegmentedTabs<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               'shrink-0 rounded-md font-display font-semibold transition-colors duration-150',
-              size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2 text-sm',
+              size === 'sm' ? 'px-2.5 py-1.5 text-[12px] sm:px-3 sm:text-[13px]' : 'px-4 py-2 text-sm',
               selected
                 ? 'bg-brand/80 text-white shadow-sm'
                 : 'text-muted hover:bg-white/70 hover:text-ink',

@@ -71,7 +71,7 @@ export function InventoryFilters({
               label: `Tipo: ${option}`,
             })),
           ]}
-          fieldClassName="w-[190px]"
+          fieldClassName="w-full sm:w-[190px]"
           className="h-8 rounded-lg text-[13px]"
         />
         <SelectField
@@ -86,7 +86,7 @@ export function InventoryFilters({
               label: `Estado: ${option.label}`,
             })),
           ]}
-          fieldClassName="w-[185px]"
+          fieldClassName="w-full sm:w-[185px]"
           className="h-8 rounded-lg text-[13px]"
         />
         <button
