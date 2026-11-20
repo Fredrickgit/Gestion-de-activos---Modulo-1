@@ -65,6 +65,8 @@ export interface TextFieldProps
   fieldClassName?: string;
   labelClassName?: string;
   hideLabel?: boolean;
+  /** Elemento opcional a la derecha del input (por ejemplo, mostrar contraseña). */
+  rightAdornment?: ReactNode;
 }
 
 export function TextField({
@@ -77,6 +79,7 @@ export function TextField({
   fieldClassName,
   labelClassName,
   hideLabel = false,
+  rightAdornment,
   id,
   required,
   className,
@@ -100,19 +103,27 @@ export function TextField({
           {label}
         </label>
       ) : null}
-      <input
-        id={inputId}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        aria-invalid={Boolean(error)}
-        className={cn(
-          INPUT_CLASSES,
-          mono && 'font-mono text-sm font-bold',
-          error && 'border-danger/60 focus:border-danger focus:ring-danger/10',
-          className,
-        )}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          id={inputId}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          aria-invalid={Boolean(error)}
+          className={cn(
+            INPUT_CLASSES,
+            mono && 'font-mono text-sm font-bold',
+            error && 'border-danger/60 focus:border-danger focus:ring-danger/10',
+            rightAdornment && 'pr-11',
+            className,
+          )}
+          {...props}
+        />
+        {rightAdornment ? (
+          <div className="absolute inset-y-0 right-1.5 flex items-center">
+            {rightAdornment}
+          </div>
+        ) : null}
+      </div>
     </FieldShell>
   );
 }

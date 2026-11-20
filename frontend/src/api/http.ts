@@ -1,5 +1,6 @@
 import { env } from '@/config/env';
 import { ApiError, toApiError } from '@/api/errors';
+import { getApiCredentials, type BasicCredentials } from '@/api/authStore';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
@@ -8,6 +9,8 @@ interface RequestOptions {
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined | null>;
   timeoutMs?: number;
+  /** Credenciales explícitas; si se omiten se usa la sesión activa o el .env. */
+  auth?: BasicCredentials;
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
@@ -26,9 +29,12 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
   return url.toString();
 }
 
-function authHeader(): Record<string, string> {
-  if (!env.apiUsername && !env.apiPassword) return {};
-  const token = btoa(`${env.apiUsername}:${env.apiPassword}`);
+function authHeader(explicit?: BasicCredentials): Record<string, string> {
+  const session = explicit ?? getApiCredentials();
+  const username = session?.username ?? env.apiUsername;
+  const password = session?.password ?? env.apiPassword;
+  if (!username && !password) return {};
+  const token = btoa(`${username}:${password}`);
   return { Authorization: `Basic ${token}` };
 }
 
@@ -59,7 +65,7 @@ export async function apiRequest<T>(
       headers: {
         Accept: 'application/json',
         ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...authHeader(),
+        ...authHeader(options.auth),
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,

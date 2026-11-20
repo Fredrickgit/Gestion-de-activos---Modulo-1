@@ -21,8 +21,8 @@ cp .env.example .env
 | Variable | Descripción |
 | --- | --- |
 | `VITE_API_BASE_URL` | URL base del backend, incluyendo `/api/v1` |
-| `VITE_API_USERNAME` | Usuario HTTP Basic (`SECURITY_USER` en Render) |
-| `VITE_API_PASSWORD` | Contraseña HTTP Basic (`SECURITY_PASSWORD` en Render) |
+| `VITE_API_USERNAME` | Usuario HTTP Basic de respaldo (opcional; el login usa las credenciales ingresadas) |
+| `VITE_API_PASSWORD` | Contraseña HTTP Basic de respaldo (opcional) |
 | `VITE_API_TIMEOUT_MS` | Timeout por petición (por defecto 60000) |
 | `VITE_DEMO_MODE` | `true` usa los datos de demostración en memoria |
 
@@ -46,11 +46,26 @@ npm run preview    # previsualizar el build
 
 | Ruta | Pantalla |
 | --- | --- |
+| `/login` | Inicio de sesión |
 | `/inventario` | Inventario — todos los recursos |
 | `/inventario/activos` | Inventario — activos |
 | `/inventario/espacios` | Inventario — espacios |
 | `/registrar` | Registrar nuevo recurso |
 | `/reportes` | Generar reporte |
+
+## Autenticación
+
+La app exige iniciar sesión antes de acceder a cualquier pantalla. El formulario
+de `/login` valida las credenciales contra el backend con HTTP Basic usando
+`GET /api/v1/auth/me`, que devuelve el usuario y su rol (`DIRECCION` o
+`MONITOR`). La sesión se guarda en `sessionStorage`, por lo que se mantiene al
+recargar la página y se cierra al cerrar la pestaña.
+
+- `DIRECCION` se muestra como **Dirección Universitaria**.
+- `MONITOR` se muestra como **Monitor de recursos**.
+
+En modo demostración (sin backend configurado) se aceptan las credenciales
+`admin / admin` (Dirección) y `monitor / monitor` (Monitor).
 
 ## Integración con el backend
 
@@ -69,6 +84,7 @@ Endpoints usados:
 
 | Método | Ruta |
 | --- | --- |
+| `GET` | `/api/v1/auth/me` |
 | `GET` | `/api/v1/recursos` |
 | `GET` | `/api/v1/recursos/{id}` |
 | `GET` | `/api/v1/recursos/{id}/disponibilidad` |

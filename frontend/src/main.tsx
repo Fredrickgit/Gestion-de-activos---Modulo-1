@@ -11,6 +11,7 @@ import '@fontsource/cousine/700.css';
 
 import './index.css';
 import App from './App';
+import { AuthProvider } from './context/AuthContext';
 import { ResourcesProvider } from './context/ResourcesContext';
 import { CatalogsProvider } from './context/CatalogsContext';
 import { ToastProvider } from './context/ToastContext';
@@ -26,12 +27,14 @@ createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       <ToastProvider>
-        <CatalogsProvider>
-          <ResourcesProvider>
-            <App />
-            <ToastViewport />
-          </ResourcesProvider>
-        </CatalogsProvider>
+        <AuthProvider>
+          <CatalogsProvider>
+            <ResourcesProvider>
+              <App />
+              <ToastViewport />
+            </ResourcesProvider>
+          </CatalogsProvider>
+        </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
   </StrictMode>,

@@ -18,6 +18,7 @@ import { seedResources } from '@/data/resources';
 import { STATUS_META } from '@/constants/status';
 import { formatDisplayDate, todayISO } from '@/lib/format';
 import { env } from '@/config/env';
+import { useAuth } from '@/context/AuthContext';
 import {
   createActivo,
   createEspacio,
@@ -57,6 +58,7 @@ let historyCounter = 0;
 function createHistoryEntry(
   action: string,
   detail: string,
+  actor: string,
   date = todayISO(),
 ): ResourceHistoryEntry {
   historyCounter += 1;
@@ -65,7 +67,7 @@ function createHistoryEntry(
     date,
     action,
     detail,
-    actor: env.apiUsername || 'Romario Pérez',
+    actor,
   };
 }
 
@@ -77,10 +79,12 @@ function findUuid(resource: Resource | undefined): string {
 }
 
 export function ResourcesProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const actor = user?.username || env.apiUsername || 'USUARIO';
   const [resources, setResources] = useState<Resource[]>(
     env.demoMode ? seedResources : [],
   );
-  const [loading, setLoading] = useState(!env.demoMode);
+  const [loading, setLoading] = useState(!env.demoMode && Boolean(user));
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
 
@@ -112,10 +116,15 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!env.demoMode) {
-      void refresh();
+    if (env.demoMode) return;
+    if (!user) {
+      setResources([]);
+      setError(null);
+      setLoading(false);
+      return;
     }
-  }, [refresh]);
+    void refresh();
+  }, [refresh, user]);
 
   const getResource = useCallback(
     (id: string) =>
@@ -132,6 +141,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
           createHistoryEntry(
             input.kind === 'activo' ? 'Registro del recurso' : 'Registro del espacio',
             `Creado en el inventario con ${input.kind === 'activo' ? 'placa' : 'código'} única ${input.id}.`,
+            actor,
           ),
         ],
       };
@@ -164,7 +174,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
     setResources((current) => [mapped, ...current]);
     void refresh();
     return mapped;
-  }, [refresh]);
+  }, [refresh, actor]);
 
   const updateResource = useCallback(
     async (id: string, patch: Partial<ResourceInput>) => {
@@ -190,7 +200,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
               ...patch,
               history: [
                 ...resource.history,
-                createHistoryEntry('Edición del recurso', detail),
+                createHistoryEntry('Edición del recurso', detail, actor),
               ],
             };
           }),
@@ -227,7 +237,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
       );
       void refresh();
     },
-    [resources, refresh],
+    [resources, refresh, actor],
   );
 
   const changeStatus = useCallback(
@@ -249,6 +259,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
                 createHistoryEntry(
                   'Cambio de estado',
                   `Estado actualizado de ${STATUS_META[resource.status].shortLabel} a ${STATUS_META[status].shortLabel} el ${formatDisplayDate(todayISO())}.`,
+                  actor,
                 ),
               ],
             };
@@ -260,7 +271,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
       await updateStatus(
         findUuid(current),
         statusToBackend(status),
-        env.apiUsername || 'direccion.universitaria',
+        actor,
         motivo,
       );
       setResources((list) =>
@@ -269,7 +280,7 @@ export function ResourcesProvider({ children }: { children: ReactNode }) {
         ),
       );
     },
-    [resources],
+    [resources, actor],
   );
 
   const deleteResource = useCallback(

@@ -15,6 +15,7 @@ import {
   SPACE_CATEGORIES,
 } from '@/data/catalog';
 import { env } from '@/config/env';
+import { useAuth } from '@/context/AuthContext';
 import { getCatalogs } from '@/api/resources';
 import { mapCatalogs } from '@/api/mappers';
 
@@ -48,10 +49,11 @@ const DEMO_CATALOGS: Catalogs = {
 const CatalogsContext = createContext<CatalogsContextValue | null>(null);
 
 export function CatalogsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [catalogs, setCatalogs] = useState<Catalogs>(
     env.demoMode ? DEMO_CATALOGS : EMPTY_CATALOGS,
   );
-  const [loading, setLoading] = useState(!env.demoMode);
+  const [loading, setLoading] = useState(!env.demoMode && Boolean(user));
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -72,8 +74,13 @@ export function CatalogsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!env.demoMode) void reload();
-  }, [reload]);
+    if (env.demoMode) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    void reload();
+  }, [reload, user]);
 
   const value = useMemo(
     () => ({ catalogs, loading, error, reload }),
