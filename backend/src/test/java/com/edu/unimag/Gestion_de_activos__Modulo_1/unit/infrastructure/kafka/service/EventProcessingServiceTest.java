@@ -22,6 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,6 +86,92 @@ class EventProcessingServiceTest {
         assertNull(espacio.getUsoTerminaEn());
         assertEquals(disponibleId, espacio.getDisponibilidadId());
         verify(historialRecursoRepo).save(any());
+    }
+
+    @Test
+    @DisplayName("Un aviso de uso para un activo inexistente se rechaza para derivarlo a la DLT")
+    void procesarNotificacionUsoConActivoInexistente() {
+        UUID eventoId = UUID.randomUUID();
+        UUID recursoId = UUID.randomUUID();
+        UUID enUsoId = UUID.randomUUID();
+
+        UseStartedData data = new UseStartedData();
+        data.setResourceId(recursoId);
+        data.setResourceCategory("ACTIVO");
+        data.setNewState("EN_USO");
+
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO))
+                .thenReturn(Optional.of(EstadoDisponibilidad.builder()
+                        .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build()));
+        when(activoRepo.findByIdForUpdate(recursoId)).thenReturn(Optional.empty());
+
+        ResourceEventPayload<UseStartedData> event = new ResourceEventPayload<>(
+                eventoId.toString(), "ResourceUseStarted", "1", OffsetDateTime.now(), "MODULE_2", data);
+
+        assertThrows(IllegalArgumentException.class, () -> service.procesarNotificacionUso(event, "{}"));
+    }
+
+    @Test
+    @DisplayName("Un aviso de uso para un espacio inexistente se rechaza para derivarlo a la DLT")
+    void procesarNotificacionUsoConEspacioInexistente() {
+        UUID eventoId = UUID.randomUUID();
+        UUID recursoId = UUID.randomUUID();
+        UUID enUsoId = UUID.randomUUID();
+
+        UseStartedData data = new UseStartedData();
+        data.setResourceId(recursoId);
+        data.setResourceCategory("ESPACIO");
+        data.setNewState("EN_USO");
+        data.setUseEndsAt(Instant.now().plus(1, ChronoUnit.HOURS));
+
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO))
+                .thenReturn(Optional.of(EstadoDisponibilidad.builder()
+                        .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build()));
+        when(espacioRepo.findByIdForUpdate(recursoId)).thenReturn(Optional.empty());
+
+        ResourceEventPayload<UseStartedData> event = new ResourceEventPayload<>(
+                eventoId.toString(), "ResourceUseStarted", "1", OffsetDateTime.now(), "MODULE_2", data);
+
+        assertThrows(IllegalArgumentException.class, () -> service.procesarNotificacionUso(event, "{}"));
+    }
+
+    @Test
+    @DisplayName("Un aviso solapado no acorta la hora de fin de uso ya programada")
+    void noAcortaUsoTerminaEnConUnAvisoSolapado() {
+        UUID eventoId = UUID.randomUUID();
+        UUID recursoId = UUID.randomUUID();
+        UUID disponibleId = UUID.randomUUID();
+        UUID enUsoId = UUID.randomUUID();
+        Instant finExistente = Instant.now().plus(2, ChronoUnit.HOURS);
+        Instant finNuevo = Instant.now().plus(1, ChronoUnit.HOURS);
+
+        Espacio espacio = Espacio.builder()
+                .id(recursoId)
+                .disponibilidadId(disponibleId)
+                .usoTerminaEn(finExistente)
+                .build();
+        EstadoDisponibilidad disponible = EstadoDisponibilidad.builder()
+                .id(disponibleId).disponibilidadRecurso(EstadoDisponibilidadRecurso.DISPONIBLE).build();
+
+        UseStartedData data = new UseStartedData();
+        data.setResourceId(recursoId);
+        data.setResourceCategory("ESPACIO");
+        data.setNewState("EN_USO");
+        data.setUseEndsAt(finNuevo);
+
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO))
+                .thenReturn(Optional.of(EstadoDisponibilidad.builder()
+                        .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build()));
+        when(espacioRepo.findByIdForUpdate(recursoId)).thenReturn(Optional.of(espacio));
+        when(eventosProcesadosRepo.findByIdForUpdate(eventoId)).thenReturn(Optional.empty());
+        when(estadoDisponibilidadRepo.findById(disponibleId)).thenReturn(Optional.of(disponible));
+
+        ResourceEventPayload<UseStartedData> event = new ResourceEventPayload<>(
+                eventoId.toString(), "ResourceUseStarted", "1", OffsetDateTime.now(), "MODULE_2", data);
+
+        service.procesarNotificacionUso(event, "{}");
+
+        assertEquals(finExistente, espacio.getUsoTerminaEn());
     }
 
     @Test

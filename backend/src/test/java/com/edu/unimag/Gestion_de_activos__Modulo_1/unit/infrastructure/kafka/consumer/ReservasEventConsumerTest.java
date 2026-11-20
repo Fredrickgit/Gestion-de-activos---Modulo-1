@@ -56,6 +56,31 @@ class ReservasEventConsumerTest {
     }
 
     @Test
+    void procesaResourceUseStartedAunqueLaVersionNoSeaExactamenteUno() throws Exception {
+        String payload = """
+                {
+                  "eventId": "c9b2f536-8a41-4d07-95ec-3f1a0d7b2e58",
+                  "type": "ResourceUseStarted",
+                  "version": "1.0",
+                  "occurredAt": "2026-11-20T13:21:10-05:00",
+                  "data": {
+                    "resourceId": "65e72b13-2fd4-47b0-9439-5a78be89de26",
+                    "resourceCategory": "ESPACIO",
+                    "newStatus": "EN_USO",
+                    "useEndsAt": "2026-11-20T14:00:00-05:00"
+                  }
+                }
+                """;
+
+        consumer.onMessage(new ConsumerRecord<>(KafkaTopics.INBOUND_M2_RESERVAS, 0, 0,
+                "539925fb-2346-4212-bf05-b867f1e929ff", payload), ack);
+
+        verify(eventProcessingService).procesarNotificacionUso(
+                org.mockito.ArgumentMatchers.<ResourceEventPayload<UseStartedData>>any(), eq(payload));
+        verify(ack).acknowledge();
+    }
+
+    @Test
     void procesaContratoV1ConFechaDeFinYVersionNumerica() throws Exception {
         String payload = """
                 {

@@ -92,11 +92,11 @@ public class EventProcessingService {
             // El bloqueo de la fila se toma antes de comprobar la idempotencia: dos
             // entregas concurrentes del mismo recurso se serializan y la segunda ya
             // observa el registro en eventos_procesados.
-            Activo activo = activoRepo.findByIdForUpdate(recursoId).orElse(null);
-            if (activo == null) {
-                log.warn("Aviso de M2 ignorado: activo no encontrado, recurso={}, eventoId={}", recursoId, eventoId);
-                return;
-            }
+            // Un recurso inexistente es un mensaje venenoso: no se debe confirmar
+            // el offset ni descartar el aviso. La excepción lo envía a la DLT.
+            Activo activo = activoRepo.findByIdForUpdate(recursoId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Activo no encontrado con ID: " + recursoId + " (eventoId=" + eventoId + ")"));
 
             if (esDuplicado(eventoId)) {
                 log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
@@ -110,11 +110,11 @@ public class EventProcessingService {
             activo.setDisponibilidadId(nuevoEstadoDispId);
             activoRepo.save(activo);
         } else {
-            Espacio espacio = espacioRepo.findByIdForUpdate(recursoId).orElse(null);
-            if (espacio == null) {
-                log.warn("Aviso de M2 ignorado: espacio no encontrado, recurso={}, eventoId={}", recursoId, eventoId);
-                return;
-            }
+            // Igual que en activos: el recurso debe existir para poder aplicar el
+            // cambio; si no, el mensaje se deriva a la DLT en lugar de perderse.
+            Espacio espacio = espacioRepo.findByIdForUpdate(recursoId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Espacio no encontrado con ID: " + recursoId + " (eventoId=" + eventoId + ")"));
 
             if (esDuplicado(eventoId)) {
                 log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
@@ -132,7 +132,12 @@ public class EventProcessingService {
 
             validarTransicion(estadoAnteriorEnum, EstadoDisponibilidadRecurso.EN_USO);
 
-            espacio.setUsoTerminaEn(fin);
+            // Si ya hay una ocupación programada más larga, no se acorta por un
+            // segundo aviso solapado. Se conserva la hora de fin más lejana.
+            if (fin != null && (espacio.getUsoTerminaEn() == null
+                    || fin.isAfter(espacio.getUsoTerminaEn()))) {
+                espacio.setUsoTerminaEn(fin);
+            }
             espacio.setDisponibilidadId(nuevoEstadoDispId);
             espacioRepo.save(espacio);
         }

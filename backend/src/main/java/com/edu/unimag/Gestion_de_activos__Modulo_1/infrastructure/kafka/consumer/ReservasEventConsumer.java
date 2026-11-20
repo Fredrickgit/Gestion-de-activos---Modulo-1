@@ -54,7 +54,7 @@ public class ReservasEventConsumer {
                     new TypeReference<ResourceEventPayload<UseStartedData>>() {}
             );
 
-            if (("ResourceUseStarted".equals(event.getType()) && "1".equals(event.getVersion()))
+            if ("ResourceUseStarted".equals(event.getType())
                     || "notificacion.uso".equals(event.getType())) {
                 eventProcessingService.procesarNotificacionUso(event, payload);
             } else {
