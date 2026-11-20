@@ -74,10 +74,12 @@ external:
   validation:
     enabled: ${EXTERNAL_VALIDATION_ENABLED:true}
   modulo2:
+    enabled: ${MODULO2_VALIDATION_ENABLED:${external.validation.enabled}}
     base-url: ${MODULO2_BASE_URL:http://localhost:8082}
     connect-timeout-ms: ${MODULO2_CONNECT_TIMEOUT:2000}
     read-timeout-ms: ${MODULO2_READ_TIMEOUT:3000}
   modulo3:
+    enabled: ${MODULO3_VALIDATION_ENABLED:${external.validation.enabled}}
     base-url: ${MODULO3_BASE_URL:http://localhost:8083}
     connect-timeout-ms: ${MODULO3_CONNECT_TIMEOUT:2000}
     read-timeout-ms: ${MODULO3_READ_TIMEOUT:3000}

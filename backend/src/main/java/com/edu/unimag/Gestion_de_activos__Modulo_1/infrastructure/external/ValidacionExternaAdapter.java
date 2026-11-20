@@ -16,8 +16,11 @@ public class ValidacionExternaAdapter implements ValidacionExternaPort {
     private final Modulo2Client modulo2Client;
     private final Modulo3Client modulo3Client;
 
-    @Value("${external.validation.enabled:true}")
-    private boolean validacionExternaHabilitada;
+    @Value("${external.modulo2.enabled:${external.validation.enabled:true}}")
+    private boolean modulo2Habilitado;
+
+    @Value("${external.modulo3.enabled:${external.validation.enabled:true}}")
+    private boolean modulo3Habilitado;
 
     public ValidacionExternaAdapter(Modulo2Client modulo2Client, Modulo3Client modulo3Client) {
         this.modulo2Client = modulo2Client;
@@ -26,7 +29,7 @@ public class ValidacionExternaAdapter implements ValidacionExternaPort {
 
     @Override
     public Optional<Boolean> tieneReservaActiva(UUID recursoId) {
-        if (!validacionExternaHabilitada) {
+        if (!modulo2Habilitado) {
             return Optional.of(false);
         }
         return modulo2Client.consultarReservaActiva(recursoId)
@@ -35,7 +38,7 @@ public class ValidacionExternaAdapter implements ValidacionExternaPort {
 
     @Override
     public Optional<Boolean> tieneNovedadPendiente(UUID recursoId) {
-        if (!validacionExternaHabilitada) {
+        if (!modulo3Habilitado) {
             return Optional.of(false);
         }
         return modulo3Client.consultarNovedadPendiente(recursoId)

@@ -54,6 +54,13 @@ services:
         value: "false"
       - key: EXTERNAL_VALIDATION_ENABLED
         value: "false"
+      # Validación REST de M3 independiente de M2 y de los listeners Kafka.
+      - key: MODULO2_VALIDATION_ENABLED
+        value: "false"
+      - key: MODULO3_VALIDATION_ENABLED
+        value: "true"
+      - key: MODULO3_BASE_URL
+        value: "https://gestionu-mod-3.onrender.com"
 
       # Credenciales de la API (HTTP Basic). Se piden al crear el Blueprint.
       - key: SECURITY_USER
