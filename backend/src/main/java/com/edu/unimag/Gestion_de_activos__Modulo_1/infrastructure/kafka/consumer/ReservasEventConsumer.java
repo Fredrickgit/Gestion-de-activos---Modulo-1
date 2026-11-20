@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Consumidor para tópicos originados en Módulo 2 (Reservas y Ocupación).
- * Tópico: unimag.m2.reservas-eventos.v1
+ * Tópico: module2.resource.status.v1
  */
 @Component
 public class ReservasEventConsumer {
@@ -35,7 +35,8 @@ public class ReservasEventConsumer {
 
     @KafkaListener(
             topics = KafkaTopics.INBOUND_M2_RESERVAS,
-            groupId = KafkaTopics.CONSUMER_GROUP_M1,
+            groupId = "${MODULE2_KAFKA_CONSUMER_GROUP:module1-inventario}",
+            autoStartup = "${MODULE2_KAFKA_LISTENER_AUTO_STARTUP:${spring.kafka.listener.auto-startup:true}}",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void onMessage(ConsumerRecord<String, String> record, Acknowledgment ack) throws Exception {
@@ -53,7 +54,12 @@ public class ReservasEventConsumer {
                     new TypeReference<ResourceEventPayload<UseStartedData>>() {}
             );
 
-            eventProcessingService.procesarNotificacionUso(event, payload);
+            if (("ResourceUseStarted".equals(event.getType()) && "1".equals(event.getVersion()))
+                    || "notificacion.uso".equals(event.getType())) {
+                eventProcessingService.procesarNotificacionUso(event, payload);
+            } else {
+                log.warn("Evento de M2 no soportado: tipo={}, versión={}", event.getType(), event.getVersion());
+            }
 
             // Commit manual a Kafka únicamente tras procesar exitosamente la transacción DB
             if (ack != null) {

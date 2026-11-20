@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +44,15 @@ public interface EspacioJpaRepository extends JpaRepository<Espacio, UUID> {
     boolean existsByFacultadId(UUID facultadId);
 
     boolean existsByUbicacionId(UUID ubicacionId);
+
+    @Query(value = """
+            SELECT * FROM espacio
+            WHERE uso_termina_en <= :ahora
+            ORDER BY uso_termina_en, id
+            LIMIT 100
+            FOR UPDATE SKIP LOCKED
+            """, nativeQuery = true)
+    List<Espacio> bloquearUsosVencidos(@Param("ahora") Instant ahora);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Espacio e WHERE e.id = :id")

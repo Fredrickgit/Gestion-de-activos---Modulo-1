@@ -1,7 +1,9 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -10,7 +12,9 @@ public class UseStartedData {
     private String resourceCategory;
     private String reservationId;
     private OccupancyWindow occupancy;
+    @JsonAlias("newStatus")
     private String newState;
+    private Instant useEndsAt;
     private String reason;
 
     public UseStartedData() {
@@ -63,6 +67,14 @@ public class UseStartedData {
 
     public void setNewState(String newState) {
         this.newState = newState;
+    }
+
+    public Instant getUseEndsAt() {
+        return useEndsAt;
+    }
+
+    public void setUseEndsAt(Instant useEndsAt) {
+        this.useEndsAt = useEndsAt;
     }
 
     public String getReason() {

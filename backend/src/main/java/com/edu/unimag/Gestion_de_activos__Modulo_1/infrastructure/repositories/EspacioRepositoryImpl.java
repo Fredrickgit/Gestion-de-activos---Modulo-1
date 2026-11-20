@@ -25,6 +25,11 @@ public class EspacioRepositoryImpl implements EspacioRepository {
     @Override
     public Espacio save(Espacio entity) {
         var model = mapper.toModel(entity);
+        if (model.getId() != null) {
+            jpaRepository.findById(model.getId())
+                    .filter(actual -> actual.getDisponibilidadId().equals(model.getDisponibilidadId()))
+                    .ifPresent(actual -> model.setUsoTerminaEn(actual.getUsoTerminaEn()));
+        }
         // saveAndFlush: la lectura CQRS posterior (JDBC, misma transacción)
         // debe ver la fila recién insertada. Con save() el INSERT podía
         // ejecutarse recién en el commit y la creación devolvía 404.

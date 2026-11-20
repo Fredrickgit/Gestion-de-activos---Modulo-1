@@ -1,5 +1,8 @@
 package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.infrastructure.kafka.service;
 
+import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.EstadoDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.ActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EspacioJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EstadoActivoJpaRepository;
@@ -18,9 +21,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EventProcessingServiceTest {
@@ -49,6 +60,30 @@ class EventProcessingServiceTest {
     void setUp() {
         service = new EventProcessingService(
                 eventosProcesadosRepo, activoRepo, espacioRepo, estadoDisponibilidadRepo, estadoActivoRepo, historialRecursoRepo);
+    }
+
+    @Test
+    void liberaEspacioVencidoYRegistraHistorial() {
+        UUID enUsoId = UUID.randomUUID();
+        UUID disponibleId = UUID.randomUUID();
+        Espacio espacio = Espacio.builder()
+                .id(UUID.randomUUID())
+                .disponibilidadId(enUsoId)
+                .usoTerminaEn(Instant.EPOCH)
+                .build();
+        EstadoDisponibilidad enUso = EstadoDisponibilidad.builder()
+                .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build();
+        EstadoDisponibilidad disponible = EstadoDisponibilidad.builder().id(disponibleId).build();
+        when(espacioRepo.bloquearUsosVencidos(any(Instant.class))).thenReturn(List.of(espacio));
+        when(estadoDisponibilidadRepo.findById(enUsoId)).thenReturn(Optional.of(enUso));
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.DISPONIBLE))
+                .thenReturn(Optional.of(disponible));
+
+        service.liberarEspaciosVencidos();
+
+        assertNull(espacio.getUsoTerminaEn());
+        assertEquals(disponibleId, espacio.getDisponibilidadId());
+        verify(historialRecursoRepo).save(any());
     }
 
     @Test

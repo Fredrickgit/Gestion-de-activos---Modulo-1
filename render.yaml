@@ -42,7 +42,12 @@ services:
           name: gestion-activos-db
           property: password
 
-      # En el plan gratuito no hay Kafka ni los modulos 2 y 3 desplegados.
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        value: "20.221.238.105:9092"
+      - key: MODULE2_KAFKA_CONSUMER_GROUP
+        value: "module1-inventario"
+      - key: MODULE2_KAFKA_LISTENER_AUTO_STARTUP
+        value: "true"
       - key: KAFKA_LISTENERS_AUTO_STARTUP
         value: "false"
       - key: OUTBOX_RELAY_ENABLED

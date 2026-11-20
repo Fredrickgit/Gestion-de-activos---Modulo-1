@@ -19,6 +19,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,9 @@ public class Espacio {
     @Column(name = "dado_de_baja", nullable = false)
     @Builder.Default
     private boolean dadoDeBaja = false;
+
+    @Column(name = "uso_termina_en")
+    private Instant usoTerminaEn;
 
     @OneToMany(mappedBy = "espacio", fetch = FetchType.LAZY)
     @Builder.Default

@@ -22,9 +22,11 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto.Reso
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto.UseStartedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -77,6 +79,12 @@ public class EventProcessingService {
         LocalDateTime fechaEvento = event.getTimestamp() != null ? event.getTimestamp().toLocalDateTime() : LocalDateTime.now();
         String usuarioResponsable = data.getReservationId() != null ? "RESERVA:" + data.getReservationId() : "MODULO_2";
 
+        if ("ResourceUseStarted".equals(event.getType())
+                && (!"EN_USO".equals(data.getNewState())
+                || (categoria == CategoriaRecurso.ESPACIO && data.getUseEndsAt() == null))) {
+            throw new IllegalArgumentException("Estado o fin de uso inválido en ResourceUseStarted.");
+        }
+
         EstadoDisponibilidadRecurso estadoAnteriorEnum;
         UUID nuevoEstadoDispId = obtenerEstadoDisponibilidadId(EstadoDisponibilidadRecurso.EN_USO);
 
@@ -84,8 +92,11 @@ public class EventProcessingService {
             // El bloqueo de la fila se toma antes de comprobar la idempotencia: dos
             // entregas concurrentes del mismo recurso se serializan y la segunda ya
             // observa el registro en eventos_procesados.
-            Activo activo = activoRepo.findByIdForUpdate(recursoId)
-                    .orElseThrow(() -> new IllegalArgumentException("Activo no encontrado con ID: " + recursoId));
+            Activo activo = activoRepo.findByIdForUpdate(recursoId).orElse(null);
+            if (activo == null) {
+                log.warn("Aviso de M2 ignorado: activo no encontrado, recurso={}, eventoId={}", recursoId, eventoId);
+                return;
+            }
 
             if (esDuplicado(eventoId)) {
                 log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
@@ -99,11 +110,21 @@ public class EventProcessingService {
             activo.setDisponibilidadId(nuevoEstadoDispId);
             activoRepo.save(activo);
         } else {
-            Espacio espacio = espacioRepo.findByIdForUpdate(recursoId)
-                    .orElseThrow(() -> new IllegalArgumentException("Espacio no encontrado con ID: " + recursoId));
+            Espacio espacio = espacioRepo.findByIdForUpdate(recursoId).orElse(null);
+            if (espacio == null) {
+                log.warn("Aviso de M2 ignorado: espacio no encontrado, recurso={}, eventoId={}", recursoId, eventoId);
+                return;
+            }
 
             if (esDuplicado(eventoId)) {
                 log.warn("Evento notificacion.uso duplicado ignorado: {}", eventoId);
+                return;
+            }
+
+            Instant fin = data.getUseEndsAt();
+            if (fin != null && !fin.isAfter(Instant.now())) {
+                guardarEventoProcesado(eventoId, "notificacion.uso", recursoId, rawPayload, "VENCIDO");
+                log.info("Aviso de uso vencido: recurso={}, eventoId={}", recursoId, eventoId);
                 return;
             }
 
@@ -111,6 +132,7 @@ public class EventProcessingService {
 
             validarTransicion(estadoAnteriorEnum, EstadoDisponibilidadRecurso.EN_USO);
 
+            espacio.setUsoTerminaEn(fin);
             espacio.setDisponibilidadId(nuevoEstadoDispId);
             espacioRepo.save(espacio);
         }
@@ -185,6 +207,7 @@ public class EventProcessingService {
 
             validarTransicion(estadoAnteriorEnum, EstadoDisponibilidadRecurso.DISPONIBLE);
 
+            espacio.setUsoTerminaEn(null);
             espacio.setDisponibilidadId(nuevoEstadoDispId);
             espacioRepo.save(espacio);
         }
@@ -257,6 +280,7 @@ public class EventProcessingService {
 
             validarTransicion(estadoAnteriorEnum, EstadoDisponibilidadRecurso.EN_MANTENIMIENTO);
 
+            espacio.setUsoTerminaEn(null);
             espacio.setDisponibilidadId(mantenimientoDispId);
             espacioRepo.save(espacio);
         }
@@ -276,6 +300,22 @@ public class EventProcessingService {
 
         guardarEventoProcesado(eventoId, "reporte.danos", recursoId, rawPayload, "EXITOSO");
         log.info("Evento reporte.danos procesado exitosamente: recurso={}, eventoId={}", recursoId, eventoId);
+    }
+
+    @Scheduled(fixedDelayString = "${module2.use-expiry.delay-ms:5000}")
+    @Transactional
+    public void liberarEspaciosVencidos() {
+        for (Espacio espacio : espacioRepo.bloquearUsosVencidos(Instant.now())) {
+            espacio.setUsoTerminaEn(null);
+            if (espacio.isDadoDeBaja()
+                    || obtenerEstadoDisponibilidadEnum(espacio.getDisponibilidadId()) != EstadoDisponibilidadRecurso.EN_USO) {
+                continue;
+            }
+            espacio.setDisponibilidadId(obtenerEstadoDisponibilidadId(EstadoDisponibilidadRecurso.DISPONIBLE));
+            registrarHistorial(espacio.getId(), EstadoDisponibilidadRecurso.EN_USO.name(),
+                    EstadoDisponibilidadRecurso.DISPONIBLE.name(), "MODULO_2",
+                    LocalDateTime.now(), "Fin de ocupación del espacio");
+        }
     }
 
     private boolean esDuplicado(UUID eventoId) {

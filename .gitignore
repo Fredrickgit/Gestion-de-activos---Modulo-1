@@ -5,3 +5,5 @@ AGENTS.md
 -l
 backend/.vscode/
 backend/target/
+.env
+frontend/node_modules/

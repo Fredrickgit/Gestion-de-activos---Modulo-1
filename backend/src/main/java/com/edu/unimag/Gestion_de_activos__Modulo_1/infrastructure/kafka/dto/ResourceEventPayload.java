@@ -15,6 +15,7 @@ public class ResourceEventPayload<T> {
 
     private String version;
 
+    @JsonAlias("occurredAt")
     private OffsetDateTime timestamp;
 
     private String source;
