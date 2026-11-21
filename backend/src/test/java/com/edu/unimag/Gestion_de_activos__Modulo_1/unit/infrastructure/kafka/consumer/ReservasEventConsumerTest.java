@@ -23,6 +23,8 @@ import java.time.Instant;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -135,6 +137,25 @@ class ReservasEventConsumerTest {
                         && "EN_USO".equals(event.getData().getNewState())
                         && "reserva-201".equals(event.getData().getReservationId())), eq(payload));
         verify(ack).acknowledge();
+    }
+
+    @Test
+    void noConfirmaEventosDeM2NoSoportados() {
+        String payload = """
+                {
+                  "eventId": "c9b2f536-8a41-4d07-95ec-3f1a0d7b2e58",
+                  "type": "ResourceStatusChanged",
+                  "version": 1,
+                  "data": {}
+                }
+                """;
+        ConsumerRecord<String, String> record = mockRecord(payload, "ResourceStatusChanged");
+
+        assertThrows(IllegalArgumentException.class, () -> consumer.onMessage(record, ack));
+
+        verify(eventProcessingService, never()).procesarNotificacionUso(
+                org.mockito.ArgumentMatchers.<ResourceEventPayload<UseStartedData>>any(), eq(payload));
+        verify(ack, never()).acknowledge();
     }
 
     private ConsumerRecord<String, String> mockRecord(String payload, String eventType) {

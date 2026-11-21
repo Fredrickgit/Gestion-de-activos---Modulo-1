@@ -6,7 +6,7 @@ public final class KafkaTopics {
         // Utility class
     }
 
-    public static final String INBOUND_M2_RESERVAS = "module2.resource.status.v1";
+    public static final String INBOUND_M2_RESERVAS = "unimag.m2.reservas-eventos.v1";
     public static final String INBOUND_M3_USO_NOVEDADES = "unimag.m3.uso-novedades.v1";
     public static final String OUTBOUND_ESTADO_ACTUALIZADO = "unimag.m1.estado-actualizado.v1";
     public static final String DLT_TOPIC = "unimag.m1.inbox.DLT";

@@ -58,7 +58,8 @@ public class ReservasEventConsumer {
                     || "notificacion.uso".equals(event.getType())) {
                 eventProcessingService.procesarNotificacionUso(event, payload);
             } else {
-                log.warn("Evento de M2 no soportado: tipo={}, versión={}", event.getType(), event.getVersion());
+                throw new IllegalArgumentException(
+                        "Evento de M2 no soportado: tipo=" + event.getType() + ", versión=" + event.getVersion());
             }
 
             // Commit manual a Kafka únicamente tras procesar exitosamente la transacción DB
