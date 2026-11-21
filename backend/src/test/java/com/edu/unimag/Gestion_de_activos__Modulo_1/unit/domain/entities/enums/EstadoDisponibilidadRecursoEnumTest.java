@@ -16,9 +16,7 @@ class EstadoDisponibilidadRecursoEnumTest {
                 .containsExactly(
                         EstadoDisponibilidadRecurso.DISPONIBLE,
                         EstadoDisponibilidadRecurso.EN_USO,
-                        EstadoDisponibilidadRecurso.EN_MANTENIMIENTO,
-                        EstadoDisponibilidadRecurso.RESERVADO,
-                        EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO);
+                        EstadoDisponibilidadRecurso.EN_MANTENIMIENTO);
     }
 
     @Test
@@ -27,8 +25,6 @@ class EstadoDisponibilidadRecursoEnumTest {
         assertThat(EstadoDisponibilidadRecurso.valueOf("DISPONIBLE")).isEqualTo(EstadoDisponibilidadRecurso.DISPONIBLE);
         assertThat(EstadoDisponibilidadRecurso.valueOf("EN_USO")).isEqualTo(EstadoDisponibilidadRecurso.EN_USO);
         assertThat(EstadoDisponibilidadRecurso.valueOf("EN_MANTENIMIENTO")).isEqualTo(EstadoDisponibilidadRecurso.EN_MANTENIMIENTO);
-        assertThat(EstadoDisponibilidadRecurso.valueOf("RESERVADO")).isEqualTo(EstadoDisponibilidadRecurso.RESERVADO);
-        assertThat(EstadoDisponibilidadRecurso.valueOf("BLOQUEO_ACADEMICO")).isEqualTo(EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO);
     }
 
     @Test

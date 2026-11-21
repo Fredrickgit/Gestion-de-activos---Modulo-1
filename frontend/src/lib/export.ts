@@ -26,10 +26,8 @@ function rowValues(row: ReportRow): string[] {
 function statusLabel(row: ReportRow): string {
   const labels: Record<ReportRow['status'], string> = {
     disponible: 'Disponible',
-    reservado: 'Reservado',
     'en-uso': 'En uso',
     mantenimiento: 'En mantenimiento',
-    bloqueo: 'Bloqueo académico',
   };
   return labels[row.status];
 }

@@ -40,28 +40,24 @@ class EstadoDisponibilidadRepositoryIT {
     }
 
     @Test
-    @DisplayName("Lista todos los estados de disponibilidad")
+    @DisplayName("Solo expone los tres estados operativos")
     void listarTodos() {
-        estadoDisponibilidadRepository.save(
-                EstadoDisponibilidad.builder().disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).descripcion("En uso").build());
-        estadoDisponibilidadRepository.save(
-                EstadoDisponibilidad.builder().disponibilidadRecurso(EstadoDisponibilidadRecurso.RESERVADO).descripcion("Reservado").build());
-
         List<EstadoDisponibilidad> estados = estadoDisponibilidadRepository.findAll();
 
-        assertEquals(2, estados.size());
+        assertEquals(3, estados.size());
+        assertTrue(estados.stream().anyMatch(estado -> estado.getDisponibilidadRecurso() == EstadoDisponibilidadRecurso.DISPONIBLE));
+        assertTrue(estados.stream().anyMatch(estado -> estado.getDisponibilidadRecurso() == EstadoDisponibilidadRecurso.EN_USO));
+        assertTrue(estados.stream().anyMatch(estado -> estado.getDisponibilidadRecurso() == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO));
     }
 
     @Test
-    @DisplayName("Busca el estado de disponibilidad por recurso")
+    @DisplayName("Busca los estados operativos por su valor")
     void buscarPorDisponibilidadRecurso() {
-        estadoDisponibilidadRepository.save(
-                EstadoDisponibilidad.builder().disponibilidadRecurso(EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO).descripcion("Bloqueo academico").build());
-
-        Optional<EstadoDisponibilidad> found = estadoDisponibilidadRepository.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO);
-
-        assertTrue(found.isPresent());
-        assertEquals(EstadoDisponibilidadRecurso.BLOQUEO_ACADEMICO, found.get().getDisponibilidadRecurso());
+        for (EstadoDisponibilidadRecurso valor : EstadoDisponibilidadRecurso.values()) {
+            Optional<EstadoDisponibilidad> found = estadoDisponibilidadRepository.findByDisponibilidadRecurso(valor);
+            assertTrue(found.isPresent());
+            assertEquals(valor, found.get().getDisponibilidadRecurso());
+        }
     }
 
     @Test

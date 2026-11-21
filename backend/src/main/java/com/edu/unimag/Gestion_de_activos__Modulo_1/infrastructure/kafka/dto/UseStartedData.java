@@ -8,19 +8,23 @@ import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UseStartedData {
-    private UUID resourceId;
+    @JsonAlias({"resource_id", "resourceCode", "resource_code", "codigoRecurso", "codigo_recurso"})
+    private String resourceId;
+    @JsonAlias({"resource_category", "categoriaRecurso", "categoria_recurso"})
     private String resourceCategory;
+    @JsonAlias({"reservation_id", "idReserva", "id_reserva"})
     private String reservationId;
     private OccupancyWindow occupancy;
-    @JsonAlias("newStatus")
+    @JsonAlias({"newStatus", "new_status", "new_state", "estadoNuevo", "estado_nuevo"})
     private String newState;
+    @JsonAlias({"use_ends_at", "endsAt", "fechaFinUso", "fecha_fin_uso"})
     private Instant useEndsAt;
     private String reason;
 
     public UseStartedData() {
     }
 
-    public UseStartedData(UUID resourceId, String resourceCategory, String reservationId, OccupancyWindow occupancy, String newState, String reason) {
+    public UseStartedData(String resourceId, String resourceCategory, String reservationId, OccupancyWindow occupancy, String newState, String reason) {
         this.resourceId = resourceId;
         this.resourceCategory = resourceCategory;
         this.reservationId = reservationId;
@@ -29,12 +33,20 @@ public class UseStartedData {
         this.reason = reason;
     }
 
-    public UUID getResourceId() {
+    public UseStartedData(UUID resourceId, String resourceCategory, String reservationId, OccupancyWindow occupancy, String newState, String reason) {
+        this(resourceId == null ? null : resourceId.toString(), resourceCategory, reservationId, occupancy, newState, reason);
+    }
+
+    public String getResourceId() {
         return resourceId;
     }
 
-    public void setResourceId(UUID resourceId) {
+    public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
+    }
+
+    public void setResourceId(UUID resourceId) {
+        this.resourceId = resourceId == null ? null : resourceId.toString();
     }
 
     public String getResourceCategory() {

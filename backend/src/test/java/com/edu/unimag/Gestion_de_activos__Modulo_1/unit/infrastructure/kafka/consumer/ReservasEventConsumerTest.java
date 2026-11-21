@@ -109,6 +109,34 @@ class ReservasEventConsumerTest {
         verify(ack).acknowledge();
     }
 
+    @Test
+    void procesaContratoConCodigoDeRecursoYCamposSnakeCase() throws Exception {
+        String payload = """
+                {
+                  "eventId": "c9b2f536-8a41-4d07-95ec-3f1a0d7b2e58",
+                  "type": "ResourceUseStarted",
+                  "version": "1.0",
+                  "occurredAt": "2026-11-20T13:21:10-05:00",
+                  "data": {
+                    "resourceId": "ACT-201",
+                    "resource_category": "ACTIVO",
+                    "new_status": "EN_USO",
+                    "reservation_id": "reserva-201"
+                  }
+                }
+                """;
+
+        consumer.onMessage(new ConsumerRecord<>(KafkaTopics.INBOUND_M2_RESERVAS, 0, 0,
+                "ACT-201", payload), ack);
+
+        verify(eventProcessingService).procesarNotificacionUso(argThat(event ->
+                "ACT-201".equals(event.getData().getResourceId())
+                        && "ACTIVO".equals(event.getData().getResourceCategory())
+                        && "EN_USO".equals(event.getData().getNewState())
+                        && "reserva-201".equals(event.getData().getReservationId())), eq(payload));
+        verify(ack).acknowledge();
+    }
+
     private ConsumerRecord<String, String> mockRecord(String payload, String eventType) {
         ConsumerRecord<String, String> record = org.mockito.Mockito.mock(ConsumerRecord.class);
         when(record.key()).thenReturn("key-1");

@@ -2,6 +2,7 @@ package com.edu.unimag.Gestion_de_activos__Modulo_1.unit.infrastructure.kafka.se
 
 import com.edu.unimag.Gestion_de_activos__Modulo_1.domain.entities.enums.EstadoDisponibilidadRecurso;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Espacio;
+import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.Activo;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.models.EstadoDisponibilidad;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.ActivoJpaRepository;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.database.jpa.EspacioJpaRepository;
@@ -14,6 +15,8 @@ import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto.Ende
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto.ResourceEventPayload;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.dto.UseStartedData;
 import com.edu.unimag.Gestion_de_activos__Modulo_1.infrastructure.kafka.service.EventProcessingService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -109,6 +112,92 @@ class EventProcessingServiceTest {
                 eventoId.toString(), "ResourceUseStarted", "1", OffsetDateTime.now(), "MODULE_2", data);
 
         assertThrows(IllegalArgumentException.class, () -> service.procesarNotificacionUso(event, "{}"));
+    }
+
+    @Test
+    @DisplayName("Resuelve el código ACT-201 y registra el inicio de uso del activo")
+    void procesaNotificacionUsoUsandoCodigoActivo() {
+        UUID eventoId = UUID.randomUUID();
+        UUID recursoId = UUID.randomUUID();
+        UUID disponibleId = UUID.randomUUID();
+        UUID enUsoId = UUID.randomUUID();
+        Activo activo = Activo.builder().id(recursoId).codigo("ACT-201").disponibilidadId(disponibleId).build();
+        EstadoDisponibilidad disponible = EstadoDisponibilidad.builder()
+                .id(disponibleId).disponibilidadRecurso(EstadoDisponibilidadRecurso.DISPONIBLE).build();
+
+        UseStartedData data = new UseStartedData();
+        data.setResourceId("ACT-201");
+        data.setResourceCategory("ACTIVO");
+        data.setNewState("EN_USO");
+
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO))
+                .thenReturn(Optional.of(EstadoDisponibilidad.builder()
+                        .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build()));
+        when(activoRepo.findByCodigo("ACT-201")).thenReturn(Optional.of(activo));
+        when(activoRepo.findByIdForUpdate(recursoId)).thenReturn(Optional.of(activo));
+        when(eventosProcesadosRepo.findByIdForUpdate(eventoId)).thenReturn(Optional.empty());
+        when(estadoDisponibilidadRepo.findById(disponibleId)).thenReturn(Optional.of(disponible));
+
+        ResourceEventPayload<UseStartedData> event = new ResourceEventPayload<>(
+                eventoId.toString(), "ResourceUseStarted", "1.0", OffsetDateTime.now(), "MODULE_2", data);
+
+        service.procesarNotificacionUso(event, "{\"data\":{\"resourceId\":\"ACT-201\"}}");
+
+        assertEquals(enUsoId, activo.getDisponibilidadId());
+        verify(activoRepo).save(activo);
+        verify(historialRecursoRepo).save(any());
+        verify(eventosProcesadosRepo).save(any());
+    }
+
+    @Test
+    @DisplayName("Aplica el payload exacto de ResourceUseStarted para un activo sin fecha de fin")
+    void procesaPayloadExactoDeInicioDeUsoDeActivo() throws Exception {
+        UUID eventoId = UUID.fromString("a59c5b4d-03b6-44ab-acc5-0548b9537bcf");
+        UUID recursoId = UUID.fromString("a7ad823d-92d0-403c-ac80-7b06d8cca0fd");
+        UUID disponibleId = UUID.randomUUID();
+        UUID enUsoId = UUID.randomUUID();
+        Activo activo = Activo.builder().id(recursoId).codigo("ACT-201").disponibilidadId(disponibleId).build();
+        EstadoDisponibilidad disponible = EstadoDisponibilidad.builder()
+                .id(disponibleId).disponibilidadRecurso(EstadoDisponibilidadRecurso.DISPONIBLE).build();
+        String payload = """
+                {
+                  "eventId": "a59c5b4d-03b6-44ab-acc5-0548b9537bcf",
+                  "type": "ResourceUseStarted",
+                  "version": 1,
+                  "occurredAt": "2026-11-20T13:20:40-05:00",
+                  "source": "MODULE_2",
+                  "data": {
+                    "resourceId": "a7ad823d-92d0-403c-ac80-7b06d8cca0fd",
+                    "resourceCategory": "ACTIVO",
+                    "reservationId": "35bf4141-3674-42d6-81eb-7e39dd25897d",
+                    "occupancy": {
+                      "start": "2026-11-20T13:30:00-05:00",
+                      "end": "2026-11-24T22:00:00-05:00"
+                    },
+                    "newStatus": "EN_USO",
+                    "reason": "USE_STARTED"
+                  }
+                }
+                """;
+        ResourceEventPayload<UseStartedData> event = new ObjectMapper().findAndRegisterModules().readValue(
+                payload, new TypeReference<>() {});
+
+        when(estadoDisponibilidadRepo.findByDisponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO))
+                .thenReturn(Optional.of(EstadoDisponibilidad.builder()
+                        .id(enUsoId).disponibilidadRecurso(EstadoDisponibilidadRecurso.EN_USO).build()));
+        when(activoRepo.findByIdForUpdate(recursoId)).thenReturn(Optional.of(activo));
+        when(eventosProcesadosRepo.findByIdForUpdate(eventoId)).thenReturn(Optional.empty());
+        when(estadoDisponibilidadRepo.findById(disponibleId)).thenReturn(Optional.of(disponible));
+
+        service.procesarNotificacionUso(event, payload);
+
+        assertEquals("ResourceUseStarted", event.getType());
+        assertEquals("EN_USO", event.getData().getNewState());
+        assertNull(event.getData().getUseEndsAt());
+        assertEquals(enUsoId, activo.getDisponibilidadId());
+        verify(activoRepo).save(activo);
+        verify(historialRecursoRepo).save(any());
+        verify(eventosProcesadosRepo).save(any());
     }
 
     @Test

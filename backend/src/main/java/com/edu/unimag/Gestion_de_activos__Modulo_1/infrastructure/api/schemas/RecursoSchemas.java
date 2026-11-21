@@ -45,7 +45,7 @@ public final class RecursoSchemas {
         } catch (IllegalArgumentException ex) {
             throw new SolicitudInvalidaException(
                     "El parámetro 'estado' no es válido. Valores permitidos: DISPONIBLE, EN_USO, "
-                            + "EN_MANTENIMIENTO, RESERVADO, BLOQUEO_ACADEMICO.");
+                            + "EN_MANTENIMIENTO.");
         }
     }
 

@@ -20,15 +20,6 @@ export const STATUS_META: Record<ResourceStatus, StatusMeta> = {
     soft: '#e8f8e8',
     border: '#b7e5b7',
   },
-  reservado: {
-    label: 'RESERVADO',
-    shortLabel: 'Reservado',
-    badge: '#1e40af',
-    bar: '#004a88',
-    text: '#ffffff',
-    soft: '#eff6ff',
-    border: '#bfdbfe',
-  },
   'en-uso': {
     label: 'EN USO',
     shortLabel: 'En uso',
@@ -47,23 +38,12 @@ export const STATUS_META: Record<ResourceStatus, StatusMeta> = {
     soft: '#eceef1',
     border: '#cbd2da',
   },
-  bloqueo: {
-    label: 'BLOQUEO ACADÉMICO',
-    shortLabel: 'Bloqueo académico',
-    badge: '#230090',
-    bar: '#230090',
-    text: '#ffffff',
-    soft: '#eee9ff',
-    border: '#cec2f7',
-  },
 };
 
 export const RESOURCE_STATUSES: ResourceStatus[] = [
   'disponible',
-  'reservado',
   'en-uso',
   'mantenimiento',
-  'bloqueo',
 ];
 
 export const STATUS_OPTIONS = RESOURCE_STATUSES.map((value) => ({
@@ -77,7 +57,6 @@ export const SUMMARY_STATUSES: Array<{
   count: number;
 }> = [
   { status: 'disponible', label: 'Disponibles', count: 230 },
-  { status: 'reservado', label: 'Reservados', count: 33 },
   { status: 'mantenimiento', label: 'En mantenimiento', count: 12 },
   { status: 'en-uso', label: 'En uso', count: 7 },
 ];

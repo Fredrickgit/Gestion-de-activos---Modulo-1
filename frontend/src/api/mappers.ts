@@ -20,18 +20,14 @@ import { STATUS_META } from '@/constants/status';
 
 const STATUS_FROM_BACKEND: Record<BackendAvailability, ResourceStatus> = {
   DISPONIBLE: 'disponible',
-  RESERVADO: 'reservado',
   EN_USO: 'en-uso',
   EN_MANTENIMIENTO: 'mantenimiento',
-  BLOQUEO_ACADEMICO: 'bloqueo',
 };
 
 const STATUS_TO_BACKEND: Record<ResourceStatus, BackendAvailability> = {
   disponible: 'DISPONIBLE',
-  reservado: 'RESERVADO',
   'en-uso': 'EN_USO',
   mantenimiento: 'EN_MANTENIMIENTO',
-  bloqueo: 'BLOQUEO_ACADEMICO',
 };
 
 const CONDITION_FROM_BACKEND: Record<BackendPhysicalState, string> = {

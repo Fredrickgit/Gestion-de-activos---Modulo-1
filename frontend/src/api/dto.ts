@@ -2,10 +2,8 @@ export type BackendResourceType = 'ACTIVO' | 'ESPACIO';
 
 export type BackendAvailability =
   | 'DISPONIBLE'
-  | 'RESERVADO'
   | 'EN_USO'
-  | 'EN_MANTENIMIENTO'
-  | 'BLOQUEO_ACADEMICO';
+  | 'EN_MANTENIMIENTO';
 
 export type BackendPhysicalState = 'NUEVO' | 'OPTIMO' | 'MAL_ESTADO' | 'AVERIADO';
 

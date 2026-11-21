@@ -2,10 +2,8 @@ export type ResourceKind = 'activo' | 'espacio';
 
 export type ResourceStatus =
   | 'disponible'
-  | 'reservado'
   | 'en-uso'
-  | 'mantenimiento'
-  | 'bloqueo';
+  | 'mantenimiento';
 
 export interface ResourceHistoryEntry {
   id: string;

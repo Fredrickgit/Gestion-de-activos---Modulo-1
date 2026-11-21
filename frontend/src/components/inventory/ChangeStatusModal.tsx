@@ -8,10 +8,8 @@ import { cn } from '@/lib/cn';
 
 const DESCRIPTIONS: Record<ResourceStatus, string> = {
   disponible: 'Listo para préstamo o asignación.',
-  reservado: 'Apartado para una actividad programada.',
   'en-uso': 'Actualmente prestado o en operación.',
   mantenimiento: 'Fuera de circulación por revisión técnica.',
-  bloqueo: 'No disponible por decisión académica.',
 };
 
 interface ChangeStatusModalProps {

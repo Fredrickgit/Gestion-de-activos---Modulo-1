@@ -562,8 +562,6 @@ public class GestionRecursos {
             case DISPONIBLE -> null;
             case EN_USO -> "Recurso actualmente en uso.";
             case EN_MANTENIMIENTO -> "Recurso en mantenimiento.";
-            case RESERVADO -> "Recurso reservado.";
-            case BLOQUEO_ACADEMICO -> "Recurso con bloqueo académico.";
         };
     }
 }

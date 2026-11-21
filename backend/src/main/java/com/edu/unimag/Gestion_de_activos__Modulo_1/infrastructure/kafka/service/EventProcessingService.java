@@ -74,7 +74,7 @@ public class EventProcessingService {
             throw new IllegalArgumentException("El evento notificacion.uso carece de datos del recurso.");
         }
 
-        UUID recursoId = data.getResourceId();
+        UUID recursoId = resolverIdentificadorRecurso(data.getResourceId(), data.getResourceCategory());
         CategoriaRecurso categoria = resolverCategoria(data.getResourceCategory(), recursoId);
         LocalDateTime fechaEvento = event.getTimestamp() != null ? event.getTimestamp().toLocalDateTime() : LocalDateTime.now();
         String usuarioResponsable = data.getReservationId() != null ? "RESERVA:" + data.getReservationId() : "MODULO_2";
@@ -349,6 +349,37 @@ public class EventProcessingService {
             return CategoriaRecurso.ESPACIO;
         }
         throw new IllegalArgumentException("No existe recurso registrado con ID: " + recursoId);
+    }
+
+    private UUID resolverIdentificadorRecurso(String resourceId, String categoryStr) {
+        if (resourceId == null || resourceId.isBlank()) {
+            throw new IllegalArgumentException("El evento de uso no contiene resourceId.");
+        }
+        try {
+            return UUID.fromString(resourceId.trim());
+        } catch (IllegalArgumentException ignored) {
+            CategoriaRecurso categoria = null;
+            if (categoryStr != null) {
+                try {
+                    categoria = CategoriaRecurso.valueOf(categoryStr.trim().toUpperCase());
+                } catch (IllegalArgumentException ignoredCategory) {
+                    throw new IllegalArgumentException("Categoría de recurso no reconocida: " + categoryStr);
+                }
+            }
+            if (categoria == null || categoria == CategoriaRecurso.ACTIVO) {
+                var activo = activoRepo.findByCodigo(resourceId.trim());
+                if (activo.isPresent()) {
+                    return activo.get().getId();
+                }
+            }
+            if (categoria == null || categoria == CategoriaRecurso.ESPACIO) {
+                var espacio = espacioRepo.findByCodigo(resourceId.trim());
+                if (espacio.isPresent()) {
+                    return espacio.get().getId();
+                }
+            }
+            throw new IllegalArgumentException("No existe recurso registrado con ID o código: " + resourceId);
+        }
     }
 
     private EstadoFisicoActivo parseEstadoFisico(String rawState) {
