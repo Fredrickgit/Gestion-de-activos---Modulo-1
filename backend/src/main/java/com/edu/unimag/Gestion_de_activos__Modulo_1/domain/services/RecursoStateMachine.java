@@ -42,7 +42,7 @@ public final class RecursoStateMachine {
                     || nuevo == EstadoDisponibilidadRecurso.EN_USO
                     || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
             case BLOQUEO_ACADEMICO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE;
-            case EN_MANTENIMIENTO -> false;
+            case EN_MANTENIMIENTO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE;
         };
     }
 }
