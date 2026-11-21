@@ -36,7 +36,7 @@ public final class RecursoStateMachine {
             // Al finalizar el uso solo puede liberarse o pasar a mantenimiento.
             case EN_USO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE
                     || nuevo == EstadoDisponibilidadRecurso.EN_MANTENIMIENTO;
-            case EN_MANTENIMIENTO -> false;
+            case EN_MANTENIMIENTO -> nuevo == EstadoDisponibilidadRecurso.DISPONIBLE;
         };
     }
 }
